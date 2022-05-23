@@ -1,0 +1,30 @@
+[package]
+name = "bitcoin-alerts"
+version = "0.1.0"
+edition = "2021"
+authors = ["Yuki Kishimoto <yukikishimoto@proton.me>"]
+license = "MIT"
+homepage = "https://github.com/p2kishimoto/bitcoin-alerts"
+repository = "https://github.com/p2kishimoto/bitcoin-alerts"
+keywords = ["bitcoin", "alerts", "notifications"]
+readme = "README.md"
+
+[dependencies]
+bitcoin-rpc = { git = "https://github.com/p2kishimoto/bitcoin-rpc", rev = "9fef87182da7c24c380580c94c7aa649e552aa77" }
+clap = { version = "3.0.14", features = ["derive"] }
+dirs = "4.0.0"
+env_logger = "0.9.0"
+lazy_static = "1.4.0"
+log = "0.4.14"
+matrix-sdk = { git = "https://github.com/matrix-org/matrix-rust-sdk", rev= "35f598a09582d69a7c73de806c63318ca10b7d39", features = ["encryption", "sled-crypto-store", "sled-state-store", "socks"] }
+rocksdb = { version = "0.17.0", default-features = false, features = ["zstd", "multi-threaded-cf"] }
+serde = { version = "1.0.133", features = ["derive"] }
+serde_json = "1.0.74"
+sha2 = "0.10.1"
+tokio = { version = "1.14.0", features = ["rt-multi-thread", "macros"] }
+tokio-stream = "0.1.8"
+toml = "0.5.8"
+
+[profile.release]
+lto = true
+codegen-units = 1
