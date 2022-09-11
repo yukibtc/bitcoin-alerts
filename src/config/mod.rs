@@ -1,18 +1,20 @@
 // Copyright (c) 2021-2022 Yuki Kishimoto
 // Distributed under the MIT software license
 
-use std::net::{SocketAddr, ToSocketAddrs};
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 
+use bitcoin::network::constants::Network;
 use bitcoincore_rpc::Auth;
 use clap::Parser;
 use dirs::home_dir;
+use log::Level;
 
 pub mod model;
 
-use model::{Bitcoin, ConfigFile, Matrix, Ntfy};
-
-pub use model::Config;
+pub use self::model::Config;
+use self::model::{Bitcoin, ConfigFile, Matrix, Ntfy};
 
 fn default_dir() -> PathBuf {
     let home: PathBuf = home_dir().unwrap_or_else(|| {
@@ -26,15 +28,6 @@ fn default_config_file() -> PathBuf {
     let mut default = default_dir().join("config");
     default.set_extension("toml");
     default
-}
-
-fn str_to_socketaddr(address: &str, what: &str) -> SocketAddr {
-    address
-        .to_socket_addrs()
-        .unwrap_or_else(|_| panic!("unable to resolve {} address", what))
-        .collect::<Vec<_>>()
-        .pop()
-        .unwrap()
 }
 
 #[derive(Parser, Debug)]
@@ -61,20 +54,50 @@ impl Config {
             }
         };
 
-        let main_path: PathBuf = match config_file.main_path {
-            Some(path) => path,
-            None => default_dir(),
+        let network: Network = match config_file.bitcoin.network {
+            Some(network_str) => match Network::from_str(network_str.as_str()) {
+                Ok(network) => network,
+                Err(_) => panic!("Invalid bitcoin network selected in config file."),
+            },
+            None => Network::Bitcoin,
         };
 
-        let bitcoin_rpc_addr: SocketAddr = match config_file.bitcoin.rpc_addr {
-            Some(addr) => addr,
-            None => str_to_socketaddr("127.0.0.1:8332", "Bitcoin RPC"),
+        let default_bitcoin_rpc_port: u16 = match network {
+            Network::Bitcoin => 8332,
+            Network::Testnet => 18332,
+            Network::Regtest => 18443,
+            Network::Signet => 38332,
+        };
+
+        let folder: &str = match network {
+            Network::Bitcoin => "bitcoin",
+            Network::Testnet => "testnet",
+            Network::Regtest => "regtest",
+            Network::Signet => "signet",
+        };
+
+        let main_path: PathBuf = config_file
+            .main_path
+            .unwrap_or_else(default_dir)
+            .join(folder);
+
+        let log_level: Level = match config_file.log_level {
+            Some(log_level) => Level::from_str(log_level.as_str()).unwrap_or(Level::Info),
+            None => Level::Info,
         };
 
         let config = Self {
+            main_path: main_path.clone(),
             db_path: main_path.join("db"),
+            log_level,
             bitcoin: Bitcoin {
-                rpc_addr: bitcoin_rpc_addr,
+                network,
+                rpc_addr: config_file.bitcoin.rpc_addr.unwrap_or_else(|| {
+                    SocketAddr::new(
+                        IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
+                        default_bitcoin_rpc_port,
+                    )
+                }),
                 rpc_auth: Auth::UserPass(
                     config_file.bitcoin.rpc_username,
                     config_file.bitcoin.rpc_password,
@@ -90,12 +113,13 @@ impl Config {
                 proxy: config_file.ntfy.proxy,
             },
             matrix: Matrix {
+                enabled: config_file.matrix.enabled.unwrap_or(false),
                 state_path: main_path.join("matrix/state"),
-                homeserver_url: config_file.matrix.homeserver_url,
+                homeserver_url: config_file.matrix.homeserver_url.unwrap_or_default(),
                 proxy: config_file.matrix.proxy,
-                user_id: config_file.matrix.user_id,
-                password: config_file.matrix.password,
-                admins: config_file.matrix.admins,
+                user_id: config_file.matrix.user_id.unwrap_or_default(),
+                password: config_file.matrix.password.unwrap_or_default(),
+                admins: config_file.matrix.admins.unwrap_or_default(),
             },
         };
 

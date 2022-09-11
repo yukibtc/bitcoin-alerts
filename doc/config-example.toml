@@ -5,7 +5,13 @@
 # Directory where data should be stored (default: ~/.bitcoin_alerts)
 # main_path = "/path/to/save/bitcoin-alerts/data"
 
+# Console log level: TRACE, DEBUG, INFO, WARN, ERROR (default: INFO)
+# log_level = "INFO"
+
 [bitcoin]
+# Network: bitcoin, testnet, regtest, signet (default: bitcoin) - don't set to anything else unless you're a developer
+# network = "bitcoin"  
+
 # Bitcoin RPC host and port (default: 127.0.0.1:8332)
 # rpc_addr = "127.0.0.1:8332"  
 
@@ -29,17 +35,20 @@ rpc_password = "yourpassword"
 # proxy = "socks5h://127.0.0.1:9050"        
 
 [matrix]
+# Enable Matrix notifications (default: false)
+# enabled = false
+
 # Your local, onion or clearnet homeserver url
-homeserver_url = "http://localhost:8008"      
+# homeserver_url = "http://localhost:8008"      
 
 # Matrix Bot user_id
-user_id = "@username:example.com"         
+# user_id = "@username:example.com"         
 
 # Matrix Bot password
-password = "yourpassword"         
+# password = "yourpassword"         
 
 # Needed if you want use onion homeserver url (default: None)
 # proxy = "socks5h://127.0.0.1:9050"
 
 # Allowed users to interact with bot
-admins = ["@admin:example.com", "@admin2:example.com"]
+# admins = ["@admin:example.com", "@admin2:example.com"]

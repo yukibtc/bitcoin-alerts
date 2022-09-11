@@ -8,6 +8,7 @@ keywords = ["bitcoin", "alerts", "notifications"]
 readme = "README.md"
 
 [dependencies]
+bitcoin = "0.29.1"
 bitcoincore-rpc = "0.16.0"
 bpns-common = { git = "https://gitlab.com/p2kishimoto/bpns", rev = "52989b7737b9bd8e242d91f7086ad6340e77ddee" }
 bpns-rocksdb = { git = "https://gitlab.com/p2kishimoto/bpns", rev = "52989b7737b9bd8e242d91f7086ad6340e77ddee" }
