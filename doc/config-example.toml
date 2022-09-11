@@ -2,16 +2,44 @@
 ## Bitcoin Alerts configuration file. Lines beginning with # are comments.
 ##
 
-# main_path = "/path/to/save/bitcoin-alerts/data"     # (Optional) Directory where data should be stored (default: ~/.bitcoin_alerts)
+# Directory where data should be stored (default: ~/.bitcoin_alerts)
+# main_path = "/path/to/save/bitcoin-alerts/data"
 
 [bitcoin]
-# rpc_addr = "127.0.0.1:8332"               # (Optional) Bitcoin Core RPC host and port (default: 127.0.0.1:8332)
-rpc_username = "yourusername"               # Bitcoin Core RPC username
-rpc_password = "yourpassword"               # Bitcoin Core RPC password
+# Bitcoin RPC host and port (default: 127.0.0.1:8332)
+# rpc_addr = "127.0.0.1:8332"  
+
+# Bitcoin RPC username
+rpc_username = "yourusername"
+
+# Bitcoin RPC password
+rpc_password = "yourpassword"  
+
+[ntfy]
+# Enable ntfy notifications (default: false)
+# enabled = false      
+
+# Ntfy server url
+# url = "https://example.com"               
+
+# Ntfy topic (default: bitcoin_alerts)
+# topic = "bitcoin_alerts"                  
+
+# Needed if you want use onion url (default: None)
+# proxy = "socks5h://127.0.0.1:9050"        
 
 [matrix]
-homeserver_url = "http://localhost:8008"    # Your local, onion or clearnet homeserver url
-# proxy = "socks5h://127.0.0.1:9050"        # (Optional) Needed if you want use onion homeserver url (default: None)
-user_id = "@username:example.com"           # Matrix Bot user_id
-password = "yourpassword"                   # Matrix Bot password
+# Your local, onion or clearnet homeserver url
+homeserver_url = "http://localhost:8008"      
+
+# Matrix Bot user_id
+user_id = "@username:example.com"         
+
+# Matrix Bot password
+password = "yourpassword"         
+
+# Needed if you want use onion homeserver url (default: None)
+# proxy = "socks5h://127.0.0.1:9050"
+
+# Allowed users to interact with bot
 admins = ["@admin:example.com", "@admin2:example.com"]
