@@ -4,12 +4,13 @@
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::path::{Path, PathBuf};
 
+use bitcoincore_rpc::Auth;
 use clap::Parser;
 use dirs::home_dir;
 
 pub mod model;
 
-use model::{Bitcoin, ConfigFile, Matrix};
+use model::{Bitcoin, ConfigFile, Matrix, Ntfy};
 
 pub use model::Config;
 
@@ -74,8 +75,19 @@ impl Config {
             db_path: main_path.join("db"),
             bitcoin: Bitcoin {
                 rpc_addr: bitcoin_rpc_addr,
-                rpc_username: config_file.bitcoin.rpc_username,
-                rpc_password: config_file.bitcoin.rpc_password,
+                rpc_auth: Auth::UserPass(
+                    config_file.bitcoin.rpc_username,
+                    config_file.bitcoin.rpc_password,
+                ),
+            },
+            ntfy: Ntfy {
+                enabled: config_file.ntfy.enabled.unwrap_or(false),
+                url: config_file.ntfy.url.unwrap_or_default(),
+                topic: config_file
+                    .ntfy
+                    .topic
+                    .unwrap_or_else(|| String::from("bitcoin_alerts")),
+                proxy: config_file.ntfy.proxy,
             },
             matrix: Matrix {
                 state_path: main_path.join("matrix/state"),

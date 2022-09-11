@@ -21,13 +21,13 @@ use tokio_stream::StreamExt;
 
 mod autojoin;
 
-use crate::{common, CONFIG, STORE};
+use crate::{CONFIG, STORE};
 
 pub struct Bot;
 
 #[derive(Debug)]
 pub enum Error {
-    Db(common::db::Error),
+    Db(bpns_rocksdb::Error),
     Matrix(matrix_sdk::Error),
     MatrixClientBuilder(matrix_sdk::ClientBuildError),
     MatrixStore(matrix_sdk::StoreError),
@@ -79,11 +79,7 @@ impl Bot {
 
             if let Some(session) = client.session().await {
                 log::debug!("Saving session data into database...");
-                STORE.create_session(
-                    user_id,
-                    &session.access_token,
-                    &session.device_id.to_string(),
-                )?;
+                STORE.create_session(user_id, &session.access_token, session.device_id.as_ref())?;
 
                 log::debug!("Session saved to database");
             } else {
@@ -273,8 +269,8 @@ impl Bot {
     }
 }
 
-impl From<common::db::Error> for Error {
-    fn from(err: common::db::Error) -> Self {
+impl From<bpns_rocksdb::Error> for Error {
+    fn from(err: bpns_rocksdb::Error) -> Self {
         Error::Db(err)
     }
 }

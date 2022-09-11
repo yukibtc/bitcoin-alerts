@@ -1,4 +1,9 @@
-DEFAULT = build
+# Use 'DEBUG=1' to build debug binary'.
+ifdef DEBUG
+  GENERAL_ARGS := 
+else
+  GENERAL_ARGS := --release
+endif
 
 # Use 'VERBOSE=1' to echo all commands, for example 'make help VERBOSE=1'.
 ifdef VERBOSE
@@ -7,7 +12,7 @@ else
   Q := @
 endif
 
-all: $(DEFAULT)
+all: build
 
 help:
 	$(Q)echo ""
@@ -17,7 +22,7 @@ help:
 	$(Q)echo ""
 
 build:
-	cargo build --release
+	$(Q)cargo build $(GENERAL_ARGS)
 
 precommit:
 	$(Q)cargo fmt && cargo clippy

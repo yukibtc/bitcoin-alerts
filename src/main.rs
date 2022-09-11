@@ -8,7 +8,6 @@ extern crate serde;
 
 mod bitcoin;
 mod bot;
-mod common;
 mod config;
 mod db;
 mod logger;

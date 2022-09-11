@@ -5,11 +5,11 @@ use std::fmt;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 
-#[derive(Deserialize)]
+use bitcoincore_rpc::Auth;
+
 pub struct Bitcoin {
     pub rpc_addr: SocketAddr,
-    pub rpc_username: String,
-    pub rpc_password: String,
+    pub rpc_auth: Auth,
 }
 
 #[derive(Deserialize)]
@@ -19,7 +19,21 @@ pub struct ConfigFileBitcoin {
     pub rpc_password: String,
 }
 
+pub struct Ntfy {
+    pub enabled: bool,
+    pub url: String,
+    pub topic: String,
+    pub proxy: Option<String>,
+}
+
 #[derive(Deserialize)]
+pub struct ConfigFileNtfy {
+    pub enabled: Option<bool>,
+    pub url: Option<String>,
+    pub topic: Option<String>,
+    pub proxy: Option<String>,
+}
+
 pub struct Matrix {
     pub state_path: PathBuf,
     pub homeserver_url: String,
@@ -38,10 +52,11 @@ pub struct ConfigFileMatrix {
     pub admins: Vec<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug)]
 pub struct Config {
     pub db_path: PathBuf,
     pub bitcoin: Bitcoin,
+    pub ntfy: Ntfy,
     pub matrix: Matrix,
 }
 
@@ -49,15 +64,22 @@ pub struct Config {
 pub struct ConfigFile {
     pub main_path: Option<PathBuf>,
     pub bitcoin: ConfigFileBitcoin,
+    pub ntfy: ConfigFileNtfy,
     pub matrix: ConfigFileMatrix,
 }
 
 impl fmt::Debug for Bitcoin {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{{ rpc_addr: {:?} }}", self.rpc_addr)
+    }
+}
+
+impl fmt::Debug for Ntfy {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{{ rpc_addr: {:?}, rpc_username: {} }}",
-            self.rpc_addr, self.rpc_username
+            "{{ url: {:?}, topic: {}, proxy: {:?} }}",
+            self.url, self.topic, self.proxy
         )
     }
 }

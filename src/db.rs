@@ -4,10 +4,9 @@
 use std::collections::HashMap;
 use std::path::Path;
 
-use crate::{
-    common::db::{Error, Store},
-    util,
-};
+use bpns_rocksdb::{Error, Store};
+
+use crate::util;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Session {
@@ -60,7 +59,7 @@ impl DBStore {
 
     pub fn get_session(&self, user_id: &str) -> Result<Session, Error> {
         self.db
-            .get_serialized(self.db.cf_handle(SESSION_CF), user_id)
+            .get_deserialized(self.db.cf_handle(SESSION_CF), user_id)
     }
 
     pub fn create_subscription(&self, room_id: &str) -> Result<(), Error> {
@@ -81,7 +80,7 @@ impl DBStore {
     pub fn get_subscriptions(&self) -> Result<Vec<String>, Error> {
         let collection = self
             .db
-            .iterator_serialized::<bool>(self.db.cf_handle(SUBSCRIPTION_CF))?;
+            .iterator_str_serialized::<bool>(self.db.cf_handle(SUBSCRIPTION_CF))?;
 
         Ok(collection.keys().cloned().collect())
     }
@@ -99,7 +98,7 @@ impl DBStore {
 
     pub fn get_notifications(&self) -> Result<HashMap<String, Notification>, Error> {
         self.db
-            .iterator_serialized::<Notification>(self.db.cf_handle(NOTIFICATION_CF))
+            .iterator_str_serialized::<Notification>(self.db.cf_handle(NOTIFICATION_CF))
     }
 
     pub fn delete_notification(&self, notification_id: &str) -> Result<(), Error> {
@@ -107,10 +106,10 @@ impl DBStore {
             .delete(self.db.cf_handle(NOTIFICATION_CF), notification_id)
     }
 
-    pub fn get_last_processed_block(&self) -> Result<u32, Error> {
+    pub fn get_last_processed_block(&self) -> Result<u64, Error> {
         let cf = self.db.cf_handle(NETWORK_CF);
         match self.db.get(cf, "last_processed_block") {
-            Ok(result) => match util::bytes_to_number::<u32>(result) {
+            Ok(result) => match util::bytes_to_number::<u64>(result) {
                 Some(num) => Ok(num),
                 None => Err(Error::FailedToDeserialize),
             },
@@ -118,7 +117,7 @@ impl DBStore {
         }
     }
 
-    pub fn set_last_processed_block(&self, block_height: u32) -> Result<(), Error> {
+    pub fn set_last_processed_block(&self, block_height: u64) -> Result<(), Error> {
         let cf = self.db.cf_handle(NETWORK_CF);
         self.db
             .put(cf, "last_processed_block", block_height.to_string())

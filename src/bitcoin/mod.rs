@@ -1,20 +1,22 @@
 // Copyright (c) 2021-2022 Yuki Kishimoto
 // Distributed under the MIT software license
 
-use bitcoin_rpc::{BlockchainInfo, NetworkInfo, PeerInfo, RpcClient};
+use bitcoincore_rpc::bitcoincore_rpc_json::{GetBlockchainInfoResult, GetNetworkInfoResult};
+use bitcoincore_rpc::{Client, RpcApi};
+use bpns_common::thread;
 
 mod processor;
 
 use processor::Processor;
 
-use crate::{common::thread, CONFIG};
+use crate::CONFIG;
 
 lazy_static! {
-    pub(crate) static ref RPC: RpcClient = RpcClient::new(
-        &CONFIG.bitcoin.rpc_addr,
-        CONFIG.bitcoin.rpc_username.as_str(),
-        CONFIG.bitcoin.rpc_password.as_str(),
-    );
+    pub(crate) static ref RPC: Client = Client::new(
+        &format!("http://{}", CONFIG.bitcoin.rpc_addr),
+        CONFIG.bitcoin.rpc_auth.clone()
+    )
+    .unwrap();
 }
 
 pub struct Bitcoin;
@@ -24,7 +26,7 @@ impl Bitcoin {
         thread::spawn("bitcoin", {
             move || {
                 loop {
-                    let blockchain_info: BlockchainInfo = match RPC.get_blockchain_info() {
+                    let blockchain_info: GetBlockchainInfoResult = match RPC.get_blockchain_info() {
                         Ok(data) => data,
                         Err(error) => {
                             log::error!("Get blockchain info: {:?} - retrying in 60 sec", error);
@@ -32,7 +34,7 @@ impl Bitcoin {
                             continue;
                         }
                     };
-                    let network_info: NetworkInfo = match RPC.get_network_info() {
+                    let network_info: GetNetworkInfoResult = match RPC.get_network_info() {
                         Ok(data) => data,
                         Err(error) => {
                             log::error!("Get network info: {:?} - retrying in 60 sec", error);
@@ -40,23 +42,8 @@ impl Bitcoin {
                             continue;
                         }
                     };
-                    let peers_info: Vec<PeerInfo> = match RPC.get_peer_info() {
-                        Ok(data) => data,
-                        Err(error) => {
-                            log::error!("Get peer info: {:?} - retrying in 60 sec", error);
-                            thread::sleep(60);
-                            continue;
-                        }
-                    };
 
-                    let left_blocks: u32 = blockchain_info.headers - blockchain_info.blocks;
-
-                    if blockchain_info.chain != "main" {
-                        log::error!("Invalid blockchain provided. This application require Bitcoin mainnet! Please switch from {} to main net or provide a different rpc.", blockchain_info.chain);
-                        panic!("invalid blockchain network");
-                    }
-
-                    if network_info.version < 220000 {
+                    if network_info.version < 22_00_00 {
                         log::error!("This application requires Bitcoin Core 22.0+");
                         panic!("Bitcoin Core version incompatible");
                     }
@@ -66,13 +53,9 @@ impl Bitcoin {
                         panic!("P2P network not enabled");
                     }
 
-                    if peers_info.is_empty() {
-                        log::info!("Waiting to connect to peers");
-                        thread::sleep(10);
-                        continue;
-                    }
+                    let left_blocks: u64 = blockchain_info.headers - blockchain_info.blocks;
 
-                    if blockchain_info.headers - blockchain_info.blocks == 0 {
+                    if left_blocks == 0 {
                         break;
                     }
 
@@ -89,6 +72,8 @@ impl Bitcoin {
                 }
 
                 Processor::run();
+
+                Ok(())
             }
         });
     }
