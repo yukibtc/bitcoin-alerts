@@ -207,7 +207,7 @@ impl Processor {
     }
 
     fn block(block_height: u64) -> Result<(), Error> {
-        let block_alerts: Vec<u64> = vec![1_000_000];
+        let block_alerts: Vec<u64> = vec![800_000, 900_000, 1_000_000];
 
         if block_alerts.contains(&block_height) {
             let plain_text: String = format!(
@@ -245,9 +245,9 @@ impl Processor {
         plain_text: String,
         html: String,
     ) -> Result<(), Error> {
-        match STORE.create_notification(target, plain_text.as_str(), html.as_str()) {
-            Ok(_) => log::info!("Queued a new notification"),
-            Err(err) => log::error!("Impossible to queue notification: {:#?}", err),
+        match STORE.create_notification(target.clone(), plain_text.as_str(), html.as_str()) {
+            Ok(_) => log::info!("Queued a new notification for {}", target),
+            Err(err) => log::error!("Impossible to queue notification for {}: {:?}", target, err),
         };
 
         Ok(())
