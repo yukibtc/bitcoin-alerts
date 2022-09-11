@@ -3,27 +3,24 @@
 
 use std::time::Instant;
 
-use matrix_sdk::{
-    config::SyncSettings,
-    room::Room,
-    ruma::{
-        events::room::message::{
-            MessageType, OriginalSyncRoomMessageEvent, RoomMessageEventContent,
-            TextMessageEventContent,
-        },
-        RoomId, UserId,
-    },
-    store::{CryptoStore, StateStore},
-    Client, ClientBuilder, Session,
+use bpns_common::thread;
+use matrix_sdk::config::SyncSettings;
+use matrix_sdk::room::Room;
+use matrix_sdk::ruma::events::room::message::{
+    MessageType, OriginalSyncRoomMessageEvent, RoomMessageEventContent, TextMessageEventContent,
 };
+use matrix_sdk::ruma::{RoomId, UserId};
+use matrix_sdk::store::{CryptoStore, StateStore};
+use matrix_sdk::{Client, ClientBuilder, Session};
 use tokio::time::{sleep, Duration};
 use tokio_stream::StreamExt;
 
 mod autojoin;
 
+use crate::primitives::Target;
 use crate::{CONFIG, STORE};
 
-pub struct Bot;
+pub struct Matrix;
 
 #[derive(Debug)]
 pub enum Error {
@@ -34,8 +31,19 @@ pub enum Error {
     MatrixCryptoStore(matrix_sdk::store::OpenStoreError),
 }
 
-impl Bot {
-    pub async fn run() -> Result<(), Error> {
+impl Matrix {
+    pub fn run() {
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+
+        rt.block_on(async {
+            Self::run_async().await.unwrap();
+        });
+    }
+
+    pub async fn run_async() -> Result<(), Error> {
         let homeserver_url: &str = CONFIG.matrix.homeserver_url.as_str();
         let user_id: &str = CONFIG.matrix.user_id.as_str();
         let password: &str = CONFIG.matrix.password.as_str();
@@ -205,7 +213,7 @@ impl Bot {
             loop {
                 log::debug!("Process pending notifications");
 
-                let mut notifications = match STORE.get_notifications() {
+                let mut notifications = match STORE.get_notifications_by_target(Target::Matrix) {
                     Ok(result) => tokio_stream::iter(result),
                     Err(error) => {
                         log::error!("Impossible to get notifications from db: {:?}", error);
@@ -266,6 +274,14 @@ impl Bot {
                 sleep(Duration::from_secs(30)).await;
             }
         });
+    }
+}
+
+impl Drop for Matrix {
+    fn drop(&mut self) {
+        if thread::panicking() {
+            std::process::exit(0x1);
+        }
     }
 }
 

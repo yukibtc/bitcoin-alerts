@@ -1,17 +1,14 @@
 // Copyright (c) 2021-2022 Yuki Kishimoto
 // Distributed under the MIT software license
 
-use matrix_sdk::{
-    room::Room,
-    ruma::{
-        events::{room::member::RoomMemberEventContent, StrippedStateEvent},
-        UserId,
-    },
-    Client,
-};
+use matrix_sdk::room::Room;
+use matrix_sdk::ruma::events::room::member::RoomMemberEventContent;
+use matrix_sdk::ruma::events::StrippedStateEvent;
+use matrix_sdk::ruma::UserId;
+use matrix_sdk::Client;
 use tokio::time::{sleep, Duration};
 
-pub(crate) async fn on_stripped_state_member(
+pub async fn on_stripped_state_member(
     room_member: StrippedStateEvent<RoomMemberEventContent>,
     client: Client,
     room: Room,
