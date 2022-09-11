@@ -12,7 +12,7 @@ use processor::Processor;
 use crate::CONFIG;
 
 lazy_static! {
-    pub(crate) static ref RPC: Client = Client::new(
+    pub static ref RPC: Client = Client::new(
         &format!("http://{}", CONFIG.bitcoin.rpc_addr),
         CONFIG.bitcoin.rpc_auth.clone()
     )
@@ -68,7 +68,7 @@ impl Bitcoin {
                             ""
                         }
                     );
-                    thread::sleep(10);
+                    thread::sleep(60);
                 }
 
                 Processor::run();

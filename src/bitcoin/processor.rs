@@ -4,12 +4,14 @@
 use std::convert::From;
 use std::time::Instant;
 
+use bitcoin::network::constants::Network;
 use bitcoincore_rpc::bitcoincore_rpc_json::{GetMiningInfoResult, GetTxOutSetInfoResult};
 use bitcoincore_rpc::RpcApi;
 use bpns_common::thread;
 
 use crate::bitcoin::RPC;
-use crate::{util, STORE};
+use crate::primitives::Target;
+use crate::{util, CONFIG, STORE};
 
 #[derive(Debug)]
 pub enum Error {
@@ -48,7 +50,7 @@ impl Processor {
 
                 if block_height <= last_processed_block {
                     log::debug!("Wait for new block");
-                    thread::sleep(120);
+                    thread::sleep(60);
                     continue;
                 }
 
@@ -215,13 +217,37 @@ impl Processor {
             Self::queue_notification(plain_text.clone(), plain_text)?;
         }
 
+        if CONFIG.bitcoin.network == Network::Regtest {
+            let plain_text: String = format!(
+                "⛓️ Reached block {} ⛓️",
+                util::format_number(block_height as usize)
+            );
+            Self::queue_notification(plain_text.clone(), plain_text)?;
+        }
+
         Ok(())
     }
 
     fn queue_notification(plain_text: String, html: String) -> Result<(), Error> {
-        match STORE.create_notification(plain_text.as_str(), html.as_str()) {
+        if CONFIG.ntfy.enabled {
+            Self::queue_notification_with_target(Target::Ntfy, plain_text.clone(), html.clone())?;
+        }
+
+        if CONFIG.matrix.enabled {
+            Self::queue_notification_with_target(Target::Matrix, plain_text, html)?;
+        }
+
+        Ok(())
+    }
+
+    fn queue_notification_with_target(
+        target: Target,
+        plain_text: String,
+        html: String,
+    ) -> Result<(), Error> {
+        match STORE.create_notification(target, plain_text.as_str(), html.as_str()) {
             Ok(_) => log::info!("Queued a new notification"),
-            Err(error) => log::error!("Impossible to queue notification: {:#?}", error),
+            Err(err) => log::error!("Impossible to queue notification: {:#?}", err),
         };
 
         Ok(())
