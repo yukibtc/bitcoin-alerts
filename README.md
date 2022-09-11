@@ -2,38 +2,19 @@
 
 ## Description
 
-Bitcoin Alerts Bot for Matrix
+Receive Bitcoin network alerts: hashrate, supply, blocks until halving, difficulty adjustment and more.
 
-This project is in an ALPHA state.
+## Setup & Usage
 
-## Requirements
+It's recommended to compile the binary from the source code [by yourself] but you can also download it from the release page.
 
-- [Rust (1.57.0+)](https://rustup.rs/)
-- [Matrix account](https://matrix.org)
+* [Build from source](doc/build.md) 
+* [Configuration](doc/configuration.md) 
 
-### Linux
+## State
 
-If you are using linux, you must also install the following packages:
+**This project is in an ALPHA state**
 
-```
-sudo apt update
-sudo apt install clang cmake build-essential pkg-config libssl-dev
-```
+## License
 
-## Build
-
-```
-cargo build --release
-```
-
-You will find the executable file in the `target/release` folder with name `bitcoin-alerts`.
-
-## Configuration
-
-### Config file
-
-Copy `docs/config-example.toml` file, rename to `config.toml`, edit with your settings and then move to `~/.bitcoin_alerts/config.toml` for Linux and MacOS or `C:\Users\YOUR_USERNAME\.bitcoin_alerts\config.toml` for Windows.
-
-## Execution
-
-To run BPNS, execute `bitcoin-alerts` file in `target/release` folder.
+This project is distributed under the MIT software license - see the [LICENSE](LICENSE) file for details
