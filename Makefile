@@ -17,12 +17,16 @@ all: build
 help:
 	$(Q)echo ""
 	$(Q)echo "make build             - Build executable"
+	$(Q)echo "make rust              - Install rust"
 	$(Q)echo "make precommit         - Execute precommit steps"
 	$(Q)echo "make loc               - Count lines of code in src folder"
 	$(Q)echo ""
 
 build:
 	$(Q)cargo build $(GENERAL_ARGS)
+
+rust:
+	$(Q)curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
 precommit:
 	$(Q)cargo fmt && cargo clippy
