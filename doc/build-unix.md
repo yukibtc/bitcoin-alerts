@@ -14,8 +14,6 @@ make rust
 
 ## Build
 
-These build instructions are recommended for most users. If you are an advanced user or developer, you can follow [advanced instructions](#build-advanced).
-
 Compile binary from source code:
 
 ```
