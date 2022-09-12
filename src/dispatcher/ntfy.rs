@@ -2,7 +2,7 @@
 // Distributed under the MIT software license
 
 use bpns_common::thread;
-use ntfy::{Client, Payload, Priority};
+use ntfy::{Dispatcher, Payload};
 
 use crate::primitives::Target;
 use crate::{CONFIG, NOTIFICATION_STORE};
@@ -19,7 +19,7 @@ impl Ntfy {
                 None => None,
             };
 
-            let client = Client::new(&CONFIG.ntfy.url, proxy).unwrap();
+            let dispatcher = Dispatcher::new(&CONFIG.ntfy.url, proxy).unwrap();
 
             move || loop {
                 log::debug!("Process pending notifications");
@@ -36,14 +36,10 @@ impl Ntfy {
                 };
 
                 for (id, notification) in notifications.into_iter() {
-                    let payload = Payload {
-                        topic: CONFIG.ntfy.topic.clone(),
-                        message: notification.plain_text.clone(),
-                        priority: Priority::Default,
-                        title: Some(String::from("Bitcoin Alerts")),
-                    };
+                    let payload = Payload::new(&CONFIG.ntfy.topic, &notification.plain_text)
+                        .title("Bitcoin Alerts");
 
-                    match client.publish(&payload) {
+                    match dispatcher.send(&payload) {
                         Ok(_) => {
                             log::info!("Sent notification: {}", notification.plain_text);
 

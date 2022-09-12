@@ -18,7 +18,7 @@ env_logger = "0.9.0"
 lazy_static = "1.4.0"
 log = "0.4.14"
 matrix-sdk = { git = "https://github.com/matrix-org/matrix-rust-sdk", rev= "35f598a09582d69a7c73de806c63318ca10b7d39", features = ["encryption", "sled-crypto-store", "sled-state-store", "socks"] }
-ntfy = { git = "https://gitlab.com/p2kishimoto/ntfy-sdk", rev= "59815e1e24efb76711bd0113ad1a147cbdde4c52" }
+ntfy = { git = "https://gitlab.com/p2kishimoto/ntfy-sdk", rev= "55a64b1ca29006d8d34d71f3a05c93c73fd4dbba" }
 serde = { version = "1.0.133", features = ["derive"] }
 serde_json = "1.0.74"
 sha2 = "0.10.1"
