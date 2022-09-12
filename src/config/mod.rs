@@ -6,7 +6,6 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use bitcoin::network::constants::Network;
-use bitcoincore_rpc::Auth;
 use clap::Parser;
 use dirs::home_dir;
 use log::Level;
@@ -97,10 +96,8 @@ impl Config {
                         default_bitcoin_rpc_port,
                     )
                 }),
-                rpc_auth: Auth::UserPass(
-                    config_file.bitcoin.rpc_username,
-                    config_file.bitcoin.rpc_password,
-                ),
+                rpc_username: config_file.bitcoin.rpc_username,
+                rpc_password: config_file.bitcoin.rpc_password,
                 db_path: main_path.join("chainstate"),
             },
             ntfy: Ntfy {

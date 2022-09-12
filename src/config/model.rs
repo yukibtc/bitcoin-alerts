@@ -6,12 +6,12 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 
 use bitcoin::network::constants::Network;
-use bitcoincore_rpc::Auth;
 
 pub struct Bitcoin {
     pub network: Network,
     pub rpc_addr: SocketAddr,
-    pub rpc_auth: Auth,
+    pub rpc_username: String,
+    pub rpc_password: String,
     pub db_path: PathBuf,
 }
 
@@ -81,8 +81,8 @@ impl fmt::Debug for Bitcoin {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{{ network: {}, rpc_addr: {:?} }}",
-            self.network, self.rpc_addr
+            "{{ network: {}, rpc_addr: {:?}, rpc_username: {} }}",
+            self.network, self.rpc_addr, self.rpc_username
         )
     }
 }

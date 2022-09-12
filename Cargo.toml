@@ -9,7 +9,7 @@ readme = "README.md"
 
 [dependencies]
 bitcoin = "0.29.1"
-bitcoincore-rpc = "0.16.0"
+bitcoin-rpc = { git = "https://gitlab.com/p2kishimoto/bitcoin-rpc", rev = "12901899181b2eaa30623b8ceed2c61e97935680" }
 bpns-common = { git = "https://gitlab.com/p2kishimoto/bpns", rev = "52989b7737b9bd8e242d91f7086ad6340e77ddee" }
 bpns-rocksdb = { git = "https://gitlab.com/p2kishimoto/bpns", rev = "52989b7737b9bd8e242d91f7086ad6340e77ddee" }
 clap = { version = "3.0.14", features = ["derive"] }
