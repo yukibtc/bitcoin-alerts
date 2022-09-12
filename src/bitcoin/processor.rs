@@ -73,7 +73,8 @@ impl Processor {
                     }
                     Err(err) => {
                         if delay > 3600 {
-                            panic!("Impossible to process block: {:?}", err);
+                            log::error!("Impossible to process block: {:?}", err);
+                            std::process::exit(0x1);
                         }
 
                         log::error!("Process block: {:?} - retrying in {} sec", err, delay);
