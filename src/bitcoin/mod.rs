@@ -68,7 +68,7 @@ impl Bitcoin {
                             ""
                         }
                     );
-                    thread::sleep(60);
+                    thread::sleep(120);
                 }
 
                 Processor::run();

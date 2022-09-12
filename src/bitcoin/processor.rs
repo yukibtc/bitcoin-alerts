@@ -33,7 +33,7 @@ impl Processor {
                     }
                     Err(err) => {
                         log::error!("Get block height: {:?}", err);
-                        thread::sleep(60);
+                        thread::sleep(120);
                         continue;
                     }
                 };
@@ -50,7 +50,7 @@ impl Processor {
 
                 if block_height <= last_processed_block {
                     log::debug!("Wait for new block");
-                    thread::sleep(60);
+                    thread::sleep(120);
                     continue;
                 }
 
@@ -67,8 +67,8 @@ impl Processor {
                         let _ = BITCOIN_STORE.set_last_processed_block(next_block_to_process);
                     }
                     Err(error) => {
-                        log::error!("Process block: {:?} - retrying in 60 sec", error);
-                        thread::sleep(60);
+                        log::error!("Process block: {:?} - retrying in 120 sec", error);
+                        thread::sleep(120);
                     }
                 };
             }
