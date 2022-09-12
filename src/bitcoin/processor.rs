@@ -25,6 +25,9 @@ impl Processor {
     pub fn run() {
         thread::spawn("block_processor", {
             log::info!("Bitcoin Block Processor started");
+
+            let mut delay = 30; // Delay seconds
+
             move || loop {
                 let block_height: u64 = match RPC.get_block_count() {
                     Ok(n) => {
@@ -58,6 +61,8 @@ impl Processor {
                 let start = Instant::now();
                 match Self::process_block(next_block_to_process) {
                     Ok(_) => {
+                        delay = 30;
+
                         let elapsed_time = start.elapsed().as_millis();
                         log::trace!(
                             "Block {} processed in {} ms",
@@ -66,9 +71,16 @@ impl Processor {
                         );
                         let _ = BITCOIN_STORE.set_last_processed_block(next_block_to_process);
                     }
-                    Err(error) => {
-                        log::error!("Process block: {:?} - retrying in 120 sec", error);
-                        thread::sleep(120);
+                    Err(err) => {
+                        if delay > 3600 {
+                            panic!("Impossible to process block: {:?}", err);
+                        }
+
+                        log::error!("Process block: {:?} - retrying in {} sec", err, delay);
+
+                        thread::sleep(delay);
+
+                        delay *= 2;
                     }
                 };
             }
@@ -76,10 +88,12 @@ impl Processor {
     }
 
     fn process_block(block_height: u64) -> Result<(), Error> {
+        let mining_info: GetMiningInfoResult = RPC.get_mining_info()?;
+
         Self::halving(block_height)?;
-        Self::difficulty_adjustment(block_height)?;
+        Self::difficulty_adjustment(block_height, &mining_info)?;
         Self::supply(block_height)?;
-        Self::hashrate()?;
+        Self::hashrate(&mining_info)?;
         Self::block(block_height)?;
         Ok(())
     }
@@ -118,10 +132,8 @@ impl Processor {
         Ok(())
     }
 
-    fn difficulty_adjustment(block_height: u64) -> Result<(), Error> {
+    fn difficulty_adjustment(block_height: u64, mining_info: &GetMiningInfoResult) -> Result<(), Error> {
         if block_height % 2016 == 0 {
-            let mining_info: GetMiningInfoResult = RPC.get_mining_info()?;
-
             let difficulty: f64 = mining_info.difficulty / u64::pow(10, 12) as f64;
 
             let last_difficulty: f64 = match BITCOIN_STORE.get_last_difficulty() {
@@ -183,8 +195,7 @@ impl Processor {
         Ok(())
     }
 
-    fn hashrate() -> Result<(), Error> {
-        let mining_info: GetMiningInfoResult = RPC.get_mining_info()?;
+    fn hashrate(mining_info: &GetMiningInfoResult) -> Result<(), Error> {
         let current_hashrate: f64 = mining_info.network_hash_ps / u64::pow(10, 18) as f64; // Hashrate in EH/s
 
         let last_hashrate_ath: f64 = match BITCOIN_STORE.get_last_hashrate_ath() {
