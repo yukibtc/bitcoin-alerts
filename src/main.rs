@@ -16,12 +16,15 @@ mod util;
 
 use self::bitcoin::Bitcoin;
 use self::config::Config;
-use self::db::DBStore;
+use self::db::{BitcoinStore, NotificationStore};
 use self::dispatcher::Dispatcher;
 
 lazy_static! {
     pub static ref CONFIG: Config = Config::from_args();
-    pub static ref STORE: DBStore = DBStore::open(&CONFIG.db_path).unwrap();
+    pub static ref BITCOIN_STORE: BitcoinStore =
+        BitcoinStore::open(&CONFIG.bitcoin.db_path).unwrap();
+    pub static ref NOTIFICATION_STORE: NotificationStore =
+        NotificationStore::open(&CONFIG.main_path.join("notification")).unwrap();
 }
 
 fn main() {

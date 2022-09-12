@@ -88,7 +88,6 @@ impl Config {
 
         let config = Self {
             main_path: main_path.clone(),
-            db_path: main_path.join("db"),
             log_level,
             bitcoin: Bitcoin {
                 network,
@@ -102,6 +101,7 @@ impl Config {
                     config_file.bitcoin.rpc_username,
                     config_file.bitcoin.rpc_password,
                 ),
+                db_path: main_path.join("chainstate"),
             },
             ntfy: Ntfy {
                 enabled: config_file.ntfy.enabled.unwrap_or(false),
@@ -114,12 +114,13 @@ impl Config {
             },
             matrix: Matrix {
                 enabled: config_file.matrix.enabled.unwrap_or(false),
-                state_path: main_path.join("matrix/state"),
                 homeserver_url: config_file.matrix.homeserver_url.unwrap_or_default(),
                 proxy: config_file.matrix.proxy,
                 user_id: config_file.matrix.user_id.unwrap_or_default(),
                 password: config_file.matrix.password.unwrap_or_default(),
                 admins: config_file.matrix.admins.unwrap_or_default(),
+                db_path: main_path.join("matrix/db"),
+                state_path: main_path.join("matrix/state"),
             },
         };
 

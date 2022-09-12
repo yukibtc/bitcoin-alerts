@@ -5,7 +5,7 @@ use bpns_common::thread;
 use ntfy::{Client, Payload, Priority};
 
 use crate::primitives::Target;
-use crate::{CONFIG, STORE};
+use crate::{CONFIG, NOTIFICATION_STORE};
 
 pub struct Ntfy;
 
@@ -24,7 +24,9 @@ impl Ntfy {
             move || loop {
                 log::debug!("Process pending notifications");
 
-                let notifications = match STORE.get_notifications_by_target(Target::Ntfy) {
+                let notifications = match NOTIFICATION_STORE
+                    .get_notifications_by_target(Target::Ntfy)
+                {
                     Ok(result) => result,
                     Err(error) => {
                         log::error!("Impossible to get ntfy notifications from db: {:?}", error);
@@ -45,7 +47,7 @@ impl Ntfy {
                         Ok(_) => {
                             log::info!("Sent notification: {}", notification.plain_text);
 
-                            match STORE.delete_notification(id.as_str()) {
+                            match NOTIFICATION_STORE.delete_notification(id.as_str()) {
                                 Ok(_) => log::debug!("Notification {} deleted", id),
                                 Err(error) => log::error!(
                                     "Impossible to delete notification {}: {:#?}",

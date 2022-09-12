@@ -12,6 +12,7 @@ pub struct Bitcoin {
     pub network: Network,
     pub rpc_addr: SocketAddr,
     pub rpc_auth: Auth,
+    pub db_path: PathBuf,
 }
 
 #[derive(Deserialize)]
@@ -39,12 +40,13 @@ pub struct ConfigFileNtfy {
 
 pub struct Matrix {
     pub enabled: bool,
-    pub state_path: PathBuf,
     pub homeserver_url: String,
     pub proxy: Option<String>,
     pub user_id: String,
     pub password: String,
     pub admins: Vec<String>,
+    pub db_path: PathBuf,
+    pub state_path: PathBuf,
 }
 
 #[derive(Deserialize)]
@@ -60,7 +62,6 @@ pub struct ConfigFileMatrix {
 #[derive(Debug)]
 pub struct Config {
     pub main_path: PathBuf,
-    pub db_path: PathBuf,
     pub log_level: log::Level,
     pub bitcoin: Bitcoin,
     pub ntfy: Ntfy,
@@ -100,8 +101,8 @@ impl fmt::Debug for Matrix {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{{ enabled: {}, state_path: {:?}, homeserver_url: {}, proxy: {:?}, user_id: {}, admins: {:?} }}",
-            self.enabled, self.state_path, self.homeserver_url, self.proxy, self.user_id, self.admins
+            "{{ enabled: {}, homeserver_url: {}, proxy: {:?}, user_id: {}, admins: {:?} }}",
+            self.enabled, self.homeserver_url, self.proxy, self.user_id, self.admins
         )
     }
 }

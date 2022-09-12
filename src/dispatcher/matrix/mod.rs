@@ -17,8 +17,13 @@ use tokio_stream::StreamExt;
 
 mod autojoin;
 
+use crate::db::MatrixStore;
 use crate::primitives::Target;
-use crate::{CONFIG, STORE};
+use crate::{CONFIG, NOTIFICATION_STORE};
+
+lazy_static! {
+    pub static ref MATRIX_STORE: MatrixStore = MatrixStore::open(&CONFIG.matrix.db_path).unwrap();
+}
 
 pub struct Matrix;
 
@@ -65,8 +70,8 @@ impl Matrix {
 
         log::debug!("Checking session...");
 
-        if STORE.session_exist(user_id) {
-            let session_store = STORE.get_session(user_id)?;
+        if MATRIX_STORE.session_exist(user_id) {
+            let session_store = MATRIX_STORE.get_session(user_id)?;
 
             let session = Session {
                 access_token: session_store.access_token,
@@ -87,7 +92,11 @@ impl Matrix {
 
             if let Some(session) = client.session().await {
                 log::debug!("Saving session data into database...");
-                STORE.create_session(user_id, &session.access_token, session.device_id.as_ref())?;
+                MATRIX_STORE.create_session(
+                    user_id,
+                    &session.access_token,
+                    session.device_id.as_ref(),
+                )?;
 
                 log::debug!("Session saved to database");
             } else {
@@ -164,16 +173,16 @@ impl Matrix {
 
             match command {
                 "!subscribe" => {
-                    if !STORE.subscription_exist(room_id) {
-                        STORE.create_subscription(room_id)?;
+                    if !MATRIX_STORE.subscription_exist(room_id) {
+                        MATRIX_STORE.create_subscription(room_id)?;
                         msg_content = "Subscribed";
                     } else {
                         msg_content = "This account is already subscribed";
                     }
                 }
                 "!unsubscribe" => {
-                    if STORE.subscription_exist(room_id) {
-                        STORE.delete_subscription(room_id)?;
+                    if MATRIX_STORE.subscription_exist(room_id) {
+                        MATRIX_STORE.delete_subscription(room_id)?;
                         msg_content = "Unsibscribed";
                     } else {
                         msg_content = "This account is not subscribed";
@@ -213,16 +222,17 @@ impl Matrix {
             loop {
                 log::debug!("Process pending notifications");
 
-                let mut notifications = match STORE.get_notifications_by_target(Target::Matrix) {
-                    Ok(result) => tokio_stream::iter(result),
-                    Err(error) => {
-                        log::error!("Impossible to get notifications from db: {:?}", error);
-                        sleep(Duration::from_secs(60)).await;
-                        continue;
-                    }
-                };
+                let mut notifications =
+                    match NOTIFICATION_STORE.get_notifications_by_target(Target::Matrix) {
+                        Ok(result) => tokio_stream::iter(result),
+                        Err(error) => {
+                            log::error!("Impossible to get notifications from db: {:?}", error);
+                            sleep(Duration::from_secs(60)).await;
+                            continue;
+                        }
+                    };
 
-                let mut subscriptions = match STORE.get_subscriptions() {
+                let mut subscriptions = match MATRIX_STORE.get_subscriptions() {
                     Ok(result) => tokio_stream::iter(result),
                     Err(error) => {
                         log::error!("Impossible to get subscriptions from db: {:?}", error);
@@ -259,7 +269,7 @@ impl Matrix {
                     let notification_id: String = notification.0;
 
                     if notification_sent {
-                        match STORE.delete_notification(notification_id.as_str()) {
+                        match NOTIFICATION_STORE.delete_notification(notification_id.as_str()) {
                             Ok(_) => log::debug!("Notification {} deleted", notification_id),
                             Err(error) => log::error!(
                                 "Impossible to delete notification {}: {:#?}",

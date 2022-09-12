@@ -11,7 +11,7 @@ use bpns_common::thread;
 
 use crate::bitcoin::RPC;
 use crate::primitives::Target;
-use crate::{util, CONFIG, STORE};
+use crate::{util, BITCOIN_STORE, CONFIG, NOTIFICATION_STORE};
 
 #[derive(Debug)]
 pub enum Error {
@@ -38,10 +38,10 @@ impl Processor {
                     }
                 };
 
-                let last_processed_block: u64 = match STORE.get_last_processed_block() {
+                let last_processed_block: u64 = match BITCOIN_STORE.get_last_processed_block() {
                     Ok(value) => value,
                     Err(_) => {
-                        let _ = STORE.set_last_processed_block(block_height);
+                        let _ = BITCOIN_STORE.set_last_processed_block(block_height);
                         block_height
                     }
                 };
@@ -64,7 +64,7 @@ impl Processor {
                             next_block_to_process,
                             elapsed_time
                         );
-                        let _ = STORE.set_last_processed_block(next_block_to_process);
+                        let _ = BITCOIN_STORE.set_last_processed_block(next_block_to_process);
                     }
                     Err(error) => {
                         log::error!("Process block: {:?} - retrying in 60 sec", error);
@@ -124,10 +124,10 @@ impl Processor {
 
             let difficulty: f64 = mining_info.difficulty / u64::pow(10, 12) as f64;
 
-            let last_difficulty: f64 = match STORE.get_last_difficulty() {
+            let last_difficulty: f64 = match BITCOIN_STORE.get_last_difficulty() {
                 Ok(value) => value,
                 Err(_) => {
-                    STORE.set_last_difficculty(difficulty)?;
+                    BITCOIN_STORE.set_last_difficculty(difficulty)?;
                     difficulty
                 }
             };
@@ -138,7 +138,7 @@ impl Processor {
                 format!("⛏️ Difficulty adj: {:.2} T ({:.2}%) ⛏️", difficulty, change);
 
             Self::queue_notification(plain_text.clone(), plain_text)?;
-            STORE.set_last_difficculty(difficulty)?;
+            BITCOIN_STORE.set_last_difficculty(difficulty)?;
         }
 
         Ok(())
@@ -148,7 +148,7 @@ impl Processor {
         let current_halving: u64 = block_height / 210_000;
         let current_reward: f64 = 50.0 / f64::powf(2.0, current_halving as f64);
 
-        if block_height % 50_000 == 0 || STORE.get_last_supply().is_err() {
+        if block_height % 50_000 == 0 || BITCOIN_STORE.get_last_supply().is_err() {
             let txoutset_info: GetTxOutSetInfoResult = RPC.get_tx_out_set_info(None, None, None)?;
             let mut total_supply: f64 = txoutset_info.total_amount.to_btc();
 
@@ -162,12 +162,12 @@ impl Processor {
                 total_supply -= (txoutset_info.height - block_height) as f64 * current_reward;
             }
 
-            let _ = STORE.set_last_supply(total_supply);
-        } else if let Ok(last_supply) = STORE.get_last_supply() {
-            let _ = STORE.set_last_supply(last_supply + current_reward);
+            let _ = BITCOIN_STORE.set_last_supply(total_supply);
+        } else if let Ok(last_supply) = BITCOIN_STORE.get_last_supply() {
+            let _ = BITCOIN_STORE.set_last_supply(last_supply + current_reward);
         }
 
-        if let Ok(last_supply) = STORE.get_last_supply() {
+        if let Ok(last_supply) = BITCOIN_STORE.get_last_supply() {
             log::debug!("Total supply: {} BTC", last_supply);
 
             if last_supply >= 19_000_000.0 && last_supply - current_reward < 19_000_000.0 {
@@ -187,10 +187,10 @@ impl Processor {
         let mining_info: GetMiningInfoResult = RPC.get_mining_info()?;
         let current_hashrate: f64 = mining_info.network_hash_ps / u64::pow(10, 18) as f64; // Hashrate in EH/s
 
-        let last_hashrate_ath: f64 = match STORE.get_last_hashrate_ath() {
+        let last_hashrate_ath: f64 = match BITCOIN_STORE.get_last_hashrate_ath() {
             Ok(value) => value,
             Err(_) => {
-                STORE.set_last_hashrate_ath(current_hashrate)?;
+                BITCOIN_STORE.set_last_hashrate_ath(current_hashrate)?;
                 current_hashrate
             }
         };
@@ -200,7 +200,7 @@ impl Processor {
                 format!("🎉  New hashrate ATH: {:.2} EH/s 🎉", current_hashrate);
 
             Self::queue_notification(plain_text.clone(), plain_text)?;
-            STORE.set_last_hashrate_ath(current_hashrate)?;
+            BITCOIN_STORE.set_last_hashrate_ath(current_hashrate)?;
         }
 
         Ok(())
@@ -245,7 +245,11 @@ impl Processor {
         plain_text: String,
         html: String,
     ) -> Result<(), Error> {
-        match STORE.create_notification(target.clone(), plain_text.as_str(), html.as_str()) {
+        match NOTIFICATION_STORE.create_notification(
+            target.clone(),
+            plain_text.as_str(),
+            html.as_str(),
+        ) {
             Ok(_) => log::info!("Queued a new notification for {}", target),
             Err(err) => log::error!("Impossible to queue notification for {}: {:?}", target, err),
         };
