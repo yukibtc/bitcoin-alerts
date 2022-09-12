@@ -124,7 +124,7 @@ impl Config {
             },
         };
 
-        log::info!("{:?}", config);
+        println!("{:?}", config);
 
         config
     }
