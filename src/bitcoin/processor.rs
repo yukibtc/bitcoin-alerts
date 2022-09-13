@@ -12,6 +12,19 @@ use crate::bitcoin::RPC;
 use crate::primitives::Target;
 use crate::{util, BITCOIN_STORE, CONFIG, NOTIFICATION_STORE};
 
+const SUPPLY_ALERTS: &[f64] = &[
+    19_200_000.0,
+    19_300_000.0,
+    19_400_000.0,
+    19_500_000.0,
+    19_600_000.0,
+    19_700_000.0,
+    19_800_000.0,
+    19_900_000.0,
+    20_000_000.0,
+];
+const BLOCK_ALERTS: &[u64] = &[800_000, 900_000, 1_000_000];
+
 #[derive(Debug)]
 pub enum Error {
     Db(bpns_rocksdb::Error),
@@ -182,13 +195,15 @@ impl Processor {
         if let Ok(last_supply) = BITCOIN_STORE.get_last_supply() {
             log::debug!("Total supply: {} BTC", last_supply);
 
-            if last_supply >= 19_000_000.0 && last_supply - current_reward < 19_000_000.0 {
-                let plain_text: String = format!(
-                    "🎊 The supply has just reached {} BTC 🎊",
-                    util::format_number(19_000_000)
-                );
+            for supply_alert in SUPPLY_ALERTS.iter() {
+                if last_supply >= *supply_alert && last_supply - current_reward < *supply_alert {
+                    let plain_text: String = format!(
+                        "🎊 The supply has just reached {} BTC 🎊",
+                        util::format_number(*supply_alert as usize)
+                    );
 
-                Self::queue_notification(plain_text.clone(), plain_text)?;
+                    Self::queue_notification(plain_text.clone(), plain_text)?;
+                }
             }
         }
 
@@ -218,9 +233,7 @@ impl Processor {
     }
 
     fn block(block_height: u64) -> Result<(), Error> {
-        let block_alerts: Vec<u64> = vec![800_000, 900_000, 1_000_000];
-
-        if block_alerts.contains(&block_height) {
+        if BLOCK_ALERTS.contains(&block_height) {
             let plain_text: String = format!(
                 "⛓️ Reached block {} ⛓️",
                 util::format_number(block_height as usize)
