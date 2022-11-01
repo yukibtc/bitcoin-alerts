@@ -257,6 +257,10 @@ impl Processor {
             Self::queue_notification_with_target(Target::Ntfy, plain_text.clone(), html.clone())?;
         }
 
+        if CONFIG.nostr.enabled {
+            Self::queue_notification_with_target(Target::Nostr, plain_text.clone(), html.clone())?;
+        }
+
         if CONFIG.matrix.enabled {
             Self::queue_notification_with_target(Target::Matrix, plain_text, html)?;
         }
