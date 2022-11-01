@@ -4,9 +4,11 @@
 use bpns_common::thread;
 
 mod matrix;
+mod nostr;
 mod ntfy;
 
 use self::matrix::Matrix;
+use self::nostr::Nostr;
 use self::ntfy::Ntfy;
 
 use crate::CONFIG;
@@ -17,6 +19,10 @@ impl Dispatcher {
     pub fn run() {
         if CONFIG.ntfy.enabled {
             Ntfy::run();
+        }
+
+        if CONFIG.nostr.enabled {
+            Nostr::run();
         }
 
         if CONFIG.matrix.enabled {

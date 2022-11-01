@@ -32,7 +32,17 @@ rpc_password = "yourpassword"
 # topic = "bitcoin_alerts"                  
 
 # Needed if you want use onion url (default: None)
-# proxy = "socks5h://127.0.0.1:9050"        
+# proxy = "socks5h://127.0.0.1:9050"
+
+[nostr]
+# Enable nostr post (default: false)
+# enabled = false   
+
+# Nostr secret key (bech32 or hex format)
+# secret_key = "nsec1..."
+
+# Nostr relays
+# relays = ["wss://relay1.example", "ws://127.0.0.1:8090"]
 
 [matrix]
 # Enable Matrix notifications (default: false)

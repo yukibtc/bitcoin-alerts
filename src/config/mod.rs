@@ -9,11 +9,13 @@ use bitcoin::network::constants::Network;
 use clap::Parser;
 use dirs::home_dir;
 use log::Level;
+use nostr_sdk::base::Keys;
+use secp256k1::SecretKey;
 
 pub mod model;
 
 pub use self::model::Config;
-use self::model::{Bitcoin, ConfigFile, Matrix, Ntfy};
+use self::model::{Bitcoin, ConfigFile, Matrix, Nostr, Ntfy};
 
 fn default_dir() -> PathBuf {
     let home: PathBuf = home_dir().unwrap_or_else(|| {
@@ -85,6 +87,14 @@ impl Config {
             None => Level::Info,
         };
 
+        let keys: Keys = match Keys::new_from_bech32(&config_file.nostr.secret_key) {
+            Ok(keys) => keys,
+            Err(_) => match SecretKey::from_str(&config_file.nostr.secret_key) {
+                Ok(secret_key) => Keys::new(secret_key),
+                Err(_) => panic!("Invalid secret key"),
+            },
+        };
+
         let config = Self {
             main_path: main_path.clone(),
             log_level,
@@ -108,6 +118,11 @@ impl Config {
                     .topic
                     .unwrap_or_else(|| String::from("bitcoin_alerts")),
                 proxy: config_file.ntfy.proxy,
+            },
+            nostr: Nostr {
+                enabled: config_file.nostr.enabled.unwrap_or(false),
+                keys,
+                relays: config_file.nostr.relays,
             },
             matrix: Matrix {
                 enabled: config_file.matrix.enabled.unwrap_or(false),

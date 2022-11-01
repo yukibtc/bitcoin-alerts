@@ -6,6 +6,7 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 
 use bitcoin::network::constants::Network;
+use nostr_sdk::base::Keys;
 
 pub struct Bitcoin {
     pub network: Network,
@@ -38,6 +39,19 @@ pub struct ConfigFileNtfy {
     pub proxy: Option<String>,
 }
 
+pub struct Nostr {
+    pub enabled: bool,
+    pub keys: Keys,
+    pub relays: Vec<String>,
+}
+
+#[derive(Deserialize)]
+pub struct ConfigFileNostr {
+    pub enabled: Option<bool>,
+    pub secret_key: String,
+    pub relays: Vec<String>,
+}
+
 pub struct Matrix {
     pub enabled: bool,
     pub homeserver_url: String,
@@ -65,6 +79,7 @@ pub struct Config {
     pub log_level: log::Level,
     pub bitcoin: Bitcoin,
     pub ntfy: Ntfy,
+    pub nostr: Nostr,
     pub matrix: Matrix,
 }
 
@@ -74,6 +89,7 @@ pub struct ConfigFile {
     pub log_level: Option<String>,
     pub bitcoin: ConfigFileBitcoin,
     pub ntfy: ConfigFileNtfy,
+    pub nostr: ConfigFileNostr,
     pub matrix: ConfigFileMatrix,
 }
 
@@ -93,6 +109,16 @@ impl fmt::Debug for Ntfy {
             f,
             "{{ enabled: {}, url: {:?}, topic: {}, proxy: {:?} }}",
             self.enabled, self.url, self.topic, self.proxy
+        )
+    }
+}
+
+impl fmt::Debug for Nostr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{{ enabled: {}, relays: {:?} }}",
+            self.enabled, self.relays
         )
     }
 }
