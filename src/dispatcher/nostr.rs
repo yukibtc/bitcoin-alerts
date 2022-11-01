@@ -25,9 +25,11 @@ impl Nostr {
                 }
             }
 
+            client.connect_all();
+
             match Event::set_metadata(
                 my_keys,
-                "bitcoinalerts",
+                "bitcoin_alerts",
                 "Bitcoin Alerts",
                 Some("Hashrate, supply, blocks until halving, difficulty adjustment and more."),
                 Some("https://avatars.githubusercontent.com/u/13464320"),
