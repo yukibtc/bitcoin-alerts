@@ -6,6 +6,7 @@ authors = ["Yuki Kishimoto <yukikishimoto@proton.me>"]
 license = "MIT"
 keywords = ["bitcoin", "alerts", "notifications"]
 readme = "README.md"
+rust-version = "1.64"
 
 [dependencies]
 bitcoin = "0.29.1"
