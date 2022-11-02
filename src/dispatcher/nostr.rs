@@ -27,6 +27,7 @@ impl Nostr {
 
             client.connect_and_keep_alive();
 
+            #[cfg(not(debug_assertions))]
             match Event::set_metadata(
                 my_keys,
                 "bitcoin_alerts",
@@ -53,7 +54,7 @@ impl Nostr {
                 };
 
                 for (id, notification) in notifications.into_iter() {
-                    match Event::new_textnote(&notification.plain_text, my_keys, &vec![]) {
+                    match Event::new_pow_textnote(&notification.plain_text, my_keys, &[], 16) {
                         Ok(event) => {
                             client.send_event(event);
 
