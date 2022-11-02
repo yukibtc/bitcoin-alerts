@@ -25,7 +25,7 @@ impl Nostr {
                 }
             }
 
-            client.connect_all();
+            client.connect_and_keep_alive();
 
             match Event::set_metadata(
                 my_keys,
@@ -39,8 +39,6 @@ impl Nostr {
             };
 
             move || loop {
-                client.connect_all();
-
                 log::debug!("Process pending notifications");
 
                 let notifications = match NOTIFICATION_STORE
