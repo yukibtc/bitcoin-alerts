@@ -3,7 +3,7 @@
 ## Download source code
 
 ```
-git clone https://gitlab.com/p2kishimoto/bitcoin-alerts.git && cd bitcoin-alerts
+git clone https://github.com/yukibtc/bitcoin-alerts.git && cd bitcoin-alerts
 ```
 
 ## Verify commits

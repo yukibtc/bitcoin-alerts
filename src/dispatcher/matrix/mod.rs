@@ -3,6 +3,7 @@
 
 use std::time::Instant;
 
+use anyhow::{anyhow, Result};
 use bpns_common::thread;
 use matrix_sdk::config::SyncSettings;
 use matrix_sdk::room::Room;
@@ -27,28 +28,8 @@ lazy_static! {
 
 pub struct Matrix;
 
-#[derive(Debug)]
-pub enum Error {
-    Db(bpns_rocksdb::Error),
-    Matrix(matrix_sdk::Error),
-    MatrixClientBuilder(matrix_sdk::ClientBuildError),
-    MatrixStore(matrix_sdk::StoreError),
-    MatrixCryptoStore(matrix_sdk::store::OpenStoreError),
-}
-
 impl Matrix {
-    pub fn run() {
-        let rt = tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build()
-            .unwrap();
-
-        rt.block_on(async {
-            Self::run_async().await.unwrap();
-        });
-    }
-
-    pub async fn run_async() -> Result<(), Error> {
+    pub async fn run() -> Result<()> {
         let homeserver_url: &str = CONFIG.matrix.homeserver_url.as_str();
         let user_id: &str = CONFIG.matrix.user_id.as_str();
         let password: &str = CONFIG.matrix.password.as_str();
@@ -71,7 +52,9 @@ impl Matrix {
         log::debug!("Checking session...");
 
         if MATRIX_STORE.session_exist(user_id) {
-            let session_store = MATRIX_STORE.get_session(user_id)?;
+            let session_store = MATRIX_STORE
+                .get_session(user_id)
+                .map_err(|e| anyhow!("{:?}", e))?;
 
             let session = Session {
                 access_token: session_store.access_token,
@@ -92,11 +75,9 @@ impl Matrix {
 
             if let Some(session) = client.session().await {
                 log::debug!("Saving session data into database...");
-                MATRIX_STORE.create_session(
-                    user_id,
-                    &session.access_token,
-                    session.device_id.as_ref(),
-                )?;
+                MATRIX_STORE
+                    .create_session(user_id, &session.access_token, session.device_id.as_ref())
+                    .map_err(|e| anyhow!("{:?}", e))?;
 
                 log::debug!("Session saved to database");
             } else {
@@ -139,10 +120,7 @@ impl Matrix {
         Ok(())
     }
 
-    async fn on_room_message(
-        event: OriginalSyncRoomMessageEvent,
-        room: &Room,
-    ) -> Result<(), Error> {
+    async fn on_room_message(event: OriginalSyncRoomMessageEvent, room: &Room) -> Result<()> {
         if *event.sender.clone() == CONFIG.matrix.user_id {
             return Ok(());
         }
@@ -174,7 +152,9 @@ impl Matrix {
             match command {
                 "!subscribe" => {
                     if !MATRIX_STORE.subscription_exist(room_id) {
-                        MATRIX_STORE.create_subscription(room_id)?;
+                        MATRIX_STORE
+                            .create_subscription(room_id)
+                            .map_err(|e| anyhow!("{:?}", e))?;
                         msg_content = "Subscribed";
                     } else {
                         msg_content = "This account is already subscribed";
@@ -182,7 +162,9 @@ impl Matrix {
                 }
                 "!unsubscribe" => {
                     if MATRIX_STORE.subscription_exist(room_id) {
-                        MATRIX_STORE.delete_subscription(room_id)?;
+                        MATRIX_STORE
+                            .delete_subscription(room_id)
+                            .map_err(|e| anyhow!("{:?}", e))?;
                         msg_content = "Unsibscribed";
                     } else {
                         msg_content = "This account is not subscribed";
@@ -292,35 +274,5 @@ impl Drop for Matrix {
         if thread::panicking() {
             std::process::exit(0x1);
         }
-    }
-}
-
-impl From<bpns_rocksdb::Error> for Error {
-    fn from(err: bpns_rocksdb::Error) -> Self {
-        Error::Db(err)
-    }
-}
-
-impl From<matrix_sdk::Error> for Error {
-    fn from(err: matrix_sdk::Error) -> Self {
-        Error::Matrix(err)
-    }
-}
-
-impl From<matrix_sdk::ClientBuildError> for Error {
-    fn from(err: matrix_sdk::ClientBuildError) -> Self {
-        Error::MatrixClientBuilder(err)
-    }
-}
-
-impl From<matrix_sdk::StoreError> for Error {
-    fn from(err: matrix_sdk::StoreError) -> Self {
-        Error::MatrixStore(err)
-    }
-}
-
-impl From<matrix_sdk::store::OpenStoreError> for Error {
-    fn from(err: matrix_sdk::store::OpenStoreError) -> Self {
-        Error::MatrixCryptoStore(err)
     }
 }

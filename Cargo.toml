@@ -3,12 +3,15 @@ name = "bitcoin-alerts"
 version = "0.1.0"
 edition = "2021"
 authors = ["Yuki Kishimoto <yukikishimoto@proton.me>"]
+homepage = "https://github.com/yukibtc/bitcoin-alerts"
+repository = "https://github.com/yukibtc/bitcoin-alerts.git"
 license = "MIT"
-keywords = ["bitcoin", "alerts", "notifications"]
 readme = "README.md"
 rust-version = "1.64"
+keywords = ["bitcoin", "alerts", "notifications"]
 
 [dependencies]
+anyhow = "1.0.66"
 bitcoin = "0.29.1"
 bitcoin-rpc = { git = "https://gitlab.com/p2kishimoto/bitcoin-rpc", rev = "12901899181b2eaa30623b8ceed2c61e97935680" }
 bpns-common = { git = "https://gitlab.com/p2kishimoto/bpns", rev = "52989b7737b9bd8e242d91f7086ad6340e77ddee" }
@@ -18,9 +21,9 @@ dirs = "4.0.0"
 env_logger = "0.9.0"
 lazy_static = "1.4.0"
 log = "0.4.14"
-matrix-sdk = { git = "https://github.com/matrix-org/matrix-rust-sdk", rev= "35f598a09582d69a7c73de806c63318ca10b7d39", features = ["encryption", "sled-crypto-store", "sled-state-store", "socks"] }
-nostr-sdk = { git = "https://gitlab.com/p2kishimoto/nostr-rs-sdk.git", rev = "d2ffbec2d658bc92b74c9a5e246b0d63ef5d3e5e", features = ["blocking"] }
-ntfy = { git = "https://gitlab.com/p2kishimoto/ntfy-sdk", rev= "55a64b1ca29006d8d34d71f3a05c93c73fd4dbba" }
+matrix-sdk = { git = "https://github.com/matrix-org/matrix-rust-sdk", rev= "35f598a09582d69a7c73de806c63318ca10b7d39", features = ["anyhow", "sled-state-store", "socks"] }
+nostr-sdk = "0.5.1"
+ntfy = "0.1.2"
 secp256k1 = "0.24"
 serde = { version = "1.0.133", features = ["derive"] }
 serde_json = "1.0.74"
@@ -28,6 +31,7 @@ sha2 = "0.10.1"
 tokio = { version = "1.14.0", features = ["rt-multi-thread", "macros"] }
 tokio-stream = "0.1.8"
 toml = "0.5.8"
+url = "2"
 
 [profile.release]
 lto = true

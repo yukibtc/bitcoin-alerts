@@ -44,6 +44,12 @@ rpc_password = "yourpassword"
 # Nostr relays
 # relays = ["wss://relay1.example", "ws://127.0.0.1:8090"]
 
+# Enable POW text notes (default: false)
+# pow_enabled = false
+
+# POW difficulty (default: 20)
+# pow_difficulty = 20
+
 [matrix]
 # Enable Matrix notifications (default: false)
 # enabled = false

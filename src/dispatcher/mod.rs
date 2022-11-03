@@ -1,6 +1,7 @@
 // Copyright (c) 2021-2022 Yuki Kishimoto
 // Distributed under the MIT software license
 
+use anyhow::Result;
 use bpns_common::thread;
 
 mod matrix;
@@ -16,18 +17,20 @@ use crate::CONFIG;
 pub struct Dispatcher;
 
 impl Dispatcher {
-    pub fn run() {
+    pub async fn run() -> Result<()> {
         if CONFIG.ntfy.enabled {
-            Ntfy::run();
+            Ntfy::run().await?;
         }
 
         if CONFIG.nostr.enabled {
-            Nostr::run();
+            Nostr::run().await?;
         }
 
         if CONFIG.matrix.enabled {
-            Matrix::run();
+            Matrix::run().await?;
         }
+
+        Ok(())
     }
 }
 

@@ -9,7 +9,7 @@ use bitcoin::network::constants::Network;
 use clap::Parser;
 use dirs::home_dir;
 use log::Level;
-use nostr_sdk::base::Keys;
+use nostr_sdk::nostr::key::{FromBech32, Keys};
 use secp256k1::SecretKey;
 
 pub mod model;
@@ -87,7 +87,7 @@ impl Config {
             None => Level::Info,
         };
 
-        let keys: Keys = match Keys::new_from_bech32(&config_file.nostr.secret_key) {
+        let keys: Keys = match Keys::from_bech32(&config_file.nostr.secret_key) {
             Ok(keys) => keys,
             Err(_) => match SecretKey::from_str(&config_file.nostr.secret_key) {
                 Ok(secret_key) => Keys::new(secret_key),
@@ -123,6 +123,8 @@ impl Config {
                 enabled: config_file.nostr.enabled.unwrap_or(false),
                 keys,
                 relays: config_file.nostr.relays,
+                pow_enabled: config_file.nostr.pow_enabled.unwrap_or(false),
+                pow_difficulty: config_file.nostr.pow_difficulty.unwrap_or(20),
             },
             matrix: Matrix {
                 enabled: config_file.matrix.enabled.unwrap_or(false),
@@ -142,7 +144,7 @@ impl Config {
     }
 
     fn read_config_file(path: &Path) -> std::io::Result<ConfigFile> {
-        let content = std::fs::read_to_string(&path)?;
+        let content = std::fs::read_to_string(path)?;
         Ok(toml::from_str(&content)?)
     }
 }

@@ -1,7 +1,9 @@
 // Copyright (c) 2021-2022 Yuki Kishimoto
 // Distributed under the MIT software license
 
-use bpns_common::thread;
+use std::time::Duration;
+
+use anyhow::Result;
 use ntfy::{Dispatcher, Payload};
 
 use crate::primitives::Target;
@@ -10,18 +12,18 @@ use crate::{CONFIG, NOTIFICATION_STORE};
 pub struct Ntfy;
 
 impl Ntfy {
-    pub fn run() {
-        thread::spawn("ntfy", {
+    pub async fn run() -> Result<()> {
+        let proxy: Option<&str> = match &CONFIG.ntfy.proxy {
+            Some(proxy) => Some(proxy.as_str()),
+            None => None,
+        };
+
+        let dispatcher = Dispatcher::new(&CONFIG.ntfy.url, proxy)?;
+
+        tokio::spawn(async move {
             log::info!("Ntfy Dispatcher started");
 
-            let proxy: Option<&str> = match &CONFIG.ntfy.proxy {
-                Some(proxy) => Some(proxy.as_str()),
-                None => None,
-            };
-
-            let dispatcher = Dispatcher::new(&CONFIG.ntfy.url, proxy).unwrap();
-
-            move || loop {
+            loop {
                 log::debug!("Process pending notifications");
 
                 let notifications = match NOTIFICATION_STORE
@@ -30,7 +32,7 @@ impl Ntfy {
                     Ok(result) => result,
                     Err(error) => {
                         log::error!("Impossible to get ntfy notifications from db: {:?}", error);
-                        thread::sleep(60);
+                        tokio::time::sleep(Duration::from_secs(60)).await;
                         continue;
                     }
                 };
@@ -39,7 +41,7 @@ impl Ntfy {
                     let payload = Payload::new(&CONFIG.ntfy.topic, &notification.plain_text)
                         .title("Bitcoin Alerts");
 
-                    match dispatcher.send(&payload) {
+                    match dispatcher.send(&payload).await {
                         Ok(_) => {
                             log::info!("Sent notification: {}", notification.plain_text);
 
@@ -59,16 +61,10 @@ impl Ntfy {
                 }
 
                 log::debug!("Wait for new notifications");
-                thread::sleep(30);
+                tokio::time::sleep(Duration::from_secs(30)).await;
             }
         });
-    }
-}
 
-impl Drop for Ntfy {
-    fn drop(&mut self) {
-        if thread::panicking() {
-            std::process::exit(0x1);
-        }
+        Ok(())
     }
 }

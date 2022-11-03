@@ -6,6 +6,8 @@ extern crate lazy_static;
 #[macro_use]
 extern crate serde;
 
+use anyhow::Result;
+
 mod bitcoin;
 mod config;
 mod db;
@@ -27,12 +29,13 @@ lazy_static! {
         NotificationStore::open(&CONFIG.main_path.join("notification")).unwrap();
 }
 
-fn main() {
+#[tokio::main]
+async fn main() -> Result<()> {
     logger::init();
 
     Bitcoin::run();
 
-    Dispatcher::run();
+    Dispatcher::run().await?;
 
     loop {
         bpns_common::thread::sleep(120);

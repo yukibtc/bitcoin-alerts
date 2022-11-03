@@ -6,7 +6,7 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 
 use bitcoin::network::constants::Network;
-use nostr_sdk::base::Keys;
+use nostr_sdk::nostr::Keys;
 
 pub struct Bitcoin {
     pub network: Network,
@@ -43,6 +43,8 @@ pub struct Nostr {
     pub enabled: bool,
     pub keys: Keys,
     pub relays: Vec<String>,
+    pub pow_enabled: bool,
+    pub pow_difficulty: u8,
 }
 
 #[derive(Deserialize)]
@@ -50,6 +52,8 @@ pub struct ConfigFileNostr {
     pub enabled: Option<bool>,
     pub secret_key: String,
     pub relays: Vec<String>,
+    pub pow_enabled: Option<bool>,
+    pub pow_difficulty: Option<u8>,
 }
 
 pub struct Matrix {
@@ -117,8 +121,8 @@ impl fmt::Debug for Nostr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{{ enabled: {}, relays: {:?} }}",
-            self.enabled, self.relays
+            "{{ enabled: {}, relays: {:?}, pow_enabled: {}, pow_difficulty: {} }}",
+            self.enabled, self.relays, self.pow_enabled, self.pow_difficulty
         )
     }
 }

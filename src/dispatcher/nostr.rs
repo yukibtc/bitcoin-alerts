@@ -1,9 +1,13 @@
 // Copyright (c) 2021-2022 Yuki Kishimoto
 // Distributed under the MIT software license
 
+use std::str::FromStr;
+
+use anyhow::Result;
 use bpns_common::thread;
-use nostr_sdk::base::{Event, Keys};
+use nostr_sdk::nostr::Metadata;
 use nostr_sdk::Client;
+use url::Url;
 
 use crate::primitives::Target;
 use crate::{CONFIG, NOTIFICATION_STORE};
@@ -11,35 +15,43 @@ use crate::{CONFIG, NOTIFICATION_STORE};
 pub struct Nostr;
 
 impl Nostr {
-    pub fn run() {
-        thread::spawn("nostr", {
+    pub async fn run() -> Result<()> {
+        let mut client: Client = Client::new(&CONFIG.nostr.keys);
+
+        for relay in CONFIG.nostr.relays.iter() {
+            if let Err(err) = client.add_relay(relay.as_str(), None) {
+                log::error!("Impossible to add relay: {}", err);
+            }
+        }
+
+        let _ = client.connect().await;
+
+        #[cfg(not(debug_assertions))]
+        let metadata = Metadata::new()
+            .name("bitcoin_alerts")
+            .display_name("Bitcoin Alerts")
+            .about("Hashrate, supply, blocks until halving, difficulty adjustment and more.")
+            .picture(Url::from_str(
+                "https://avatars.githubusercontent.com/u/13464320",
+            )?);
+
+        #[cfg(debug_assertions)]
+        let metadata = Metadata::new()
+            .name("test_alerts")
+            .display_name("Test Alerts")
+            .about("Description")
+            .picture(Url::from_str(
+                "http://mymodernmet.com/wp/wp-content/uploads/2017/03/gabrielius-khiterer-stray-cats-11.jpg",
+            )?);
+
+        if let Err(err) = client.update_profile(metadata).await {
+            log::error!("Impossible to update profile metadata: {}", err);
+        }
+
+        tokio::spawn(async move {
             log::info!("Nostr Dispatcher started");
 
-            let my_keys: &Keys = &CONFIG.nostr.keys;
-
-            let client: Client = Client::new(my_keys, None);
-
-            for relay in CONFIG.nostr.relays.iter() {
-                if let Err(err) = client.add_relay(relay.as_str()) {
-                    log::error!("Impossible to add relay: {}", err);
-                }
-            }
-
-            client.connect_and_keep_alive();
-
-            #[cfg(not(debug_assertions))]
-            match Event::set_metadata(
-                my_keys,
-                "bitcoin_alerts",
-                "Bitcoin Alerts",
-                Some("Hashrate, supply, blocks until halving, difficulty adjustment and more."),
-                Some("https://avatars.githubusercontent.com/u/13464320"),
-            ) {
-                Ok(event) => client.send_event(event),
-                Err(err) => log::error!("Impossible to set metadata: {}", err),
-            };
-
-            move || loop {
+            loop {
                 log::debug!("Process pending notifications");
 
                 let notifications = match NOTIFICATION_STORE
@@ -53,11 +65,27 @@ impl Nostr {
                     }
                 };
 
-                for (id, notification) in notifications.into_iter() {
-                    match Event::new_pow_textnote(&notification.plain_text, my_keys, &[], 16) {
-                        Ok(event) => {
-                            client.send_event(event);
+                if !notifications.is_empty() {
+                    let _ = client.connect().await;
+                }
 
+                for (id, notification) in notifications.into_iter() {
+                    let result = if CONFIG.nostr.pow_enabled {
+                        client
+                            .publish_pow_text_note(
+                                &notification.plain_text,
+                                &[],
+                                CONFIG.nostr.pow_difficulty,
+                            )
+                            .await
+                    } else {
+                        client
+                            .publish_text_note(&notification.plain_text, &[])
+                            .await
+                    };
+
+                    match result {
+                        Ok(_) => {
                             log::info!("Sent notification: {}", notification.plain_text);
 
                             match NOTIFICATION_STORE.delete_notification(id.as_str()) {
@@ -75,10 +103,14 @@ impl Nostr {
                     }
                 }
 
+                let _ = client.disconnect().await;
+
                 log::debug!("Wait for new notifications");
-                thread::sleep(30);
+                thread::sleep(120);
             }
         });
+
+        Ok(())
     }
 }
 
