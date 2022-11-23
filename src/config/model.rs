@@ -7,6 +7,7 @@ use std::path::PathBuf;
 
 use bitcoin::network::constants::Network;
 use nostr_sdk::nostr::Keys;
+use ntfy::Auth;
 
 pub struct Bitcoin {
     pub network: Network,
@@ -28,6 +29,7 @@ pub struct Ntfy {
     pub enabled: bool,
     pub url: String,
     pub topic: String,
+    pub auth: Option<Auth>,
     pub proxy: Option<String>,
 }
 
@@ -36,6 +38,8 @@ pub struct ConfigFileNtfy {
     pub enabled: Option<bool>,
     pub url: Option<String>,
     pub topic: Option<String>,
+    pub username: Option<String>,
+    pub password: Option<String>,
     pub proxy: Option<String>,
 }
 
@@ -111,8 +115,12 @@ impl fmt::Debug for Ntfy {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{{ enabled: {}, url: {:?}, topic: {}, proxy: {:?} }}",
-            self.enabled, self.url, self.topic, self.proxy
+            "{{ enabled: {}, url: {:?}, topic: {}, credentials: {}, proxy: {:?} }}",
+            self.enabled,
+            self.url,
+            self.topic,
+            self.auth.is_some(),
+            self.proxy
         )
     }
 }

@@ -26,10 +26,14 @@ rpc_password = "yourpassword"
 # enabled = false      
 
 # Ntfy server url
-# url = "https://example.com"               
+# url = "https://example.com"    
 
 # Ntfy topic (default: bitcoin_alerts)
-# topic = "bitcoin_alerts"                  
+# topic = "bitcoin_alerts"
+
+# Credentials (default: None)
+# username = "username"
+# password = "password"
 
 # Needed if you want use onion url (default: None)
 # proxy = "socks5h://127.0.0.1:9050"

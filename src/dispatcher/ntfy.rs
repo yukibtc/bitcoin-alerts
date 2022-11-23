@@ -13,12 +13,11 @@ pub struct Ntfy;
 
 impl Ntfy {
     pub async fn run() -> Result<()> {
-        let proxy: Option<&str> = match &CONFIG.ntfy.proxy {
-            Some(proxy) => Some(proxy.as_str()),
-            None => None,
-        };
-
-        let dispatcher = Dispatcher::new(&CONFIG.ntfy.url, proxy)?;
+        let dispatcher = Dispatcher::new(
+            &CONFIG.ntfy.url,
+            CONFIG.ntfy.auth.clone(),
+            CONFIG.ntfy.proxy.as_ref(),
+        )?;
 
         tokio::spawn(async move {
             log::info!("Ntfy Dispatcher started");
@@ -38,7 +37,8 @@ impl Ntfy {
                 };
 
                 for (id, notification) in notifications.into_iter() {
-                    let payload = Payload::new(&CONFIG.ntfy.topic, &notification.plain_text)
+                    let payload = Payload::new(&CONFIG.ntfy.topic)
+                        .message(&notification.plain_text)
                         .title("Bitcoin Alerts");
 
                     match dispatcher.send(&payload).await {

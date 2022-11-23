@@ -10,6 +10,7 @@ use clap::Parser;
 use dirs::home_dir;
 use log::Level;
 use nostr_sdk::nostr::key::{FromBech32, Keys};
+use ntfy::Auth;
 use secp256k1::SecretKey;
 
 pub mod model;
@@ -95,6 +96,15 @@ impl Config {
             },
         };
 
+        let ntfy_auth: Option<Auth> = if let Some(username) = config_file.ntfy.username {
+            config_file
+                .ntfy
+                .password
+                .map(|password| Auth::new(username, password))
+        } else {
+            None
+        };
+
         let config = Self {
             main_path: main_path.clone(),
             log_level,
@@ -117,6 +127,7 @@ impl Config {
                     .ntfy
                     .topic
                     .unwrap_or_else(|| String::from("bitcoin_alerts")),
+                auth: ntfy_auth,
                 proxy: config_file.ntfy.proxy,
             },
             nostr: Nostr {
