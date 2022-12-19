@@ -65,10 +65,6 @@ impl Nostr {
                     }
                 };
 
-                if !notifications.is_empty() {
-                    let _ = client.connect_and_wait().await;
-                }
-
                 for (id, notification) in notifications.into_iter() {
                     let result = if CONFIG.nostr.pow_enabled {
                         client
@@ -102,8 +98,6 @@ impl Nostr {
                         }
                     }
                 }
-
-                let _ = client.disconnect().await;
 
                 log::debug!("Wait for new notifications");
                 thread::sleep(120);
