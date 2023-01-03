@@ -5,9 +5,9 @@ use std::str::FromStr;
 
 use anyhow::Result;
 use bpns_common::thread;
+use nostr_sdk::nostr::url::Url;
 use nostr_sdk::nostr::Metadata;
 use nostr_sdk::Client;
-use url::Url;
 
 use crate::primitives::Target;
 use crate::{CONFIG, NOTIFICATION_STORE};
@@ -16,10 +16,10 @@ pub struct Nostr;
 
 impl Nostr {
     pub async fn run() -> Result<()> {
-        let mut client: Client = Client::new(&CONFIG.nostr.keys);
+        let client: Client = Client::new(&CONFIG.nostr.keys);
 
         for relay in CONFIG.nostr.relays.iter() {
-            if let Err(err) = client.add_relay(relay.as_str(), None) {
+            if let Err(err) = client.add_relay(relay.as_str(), None).await {
                 log::error!("Impossible to add relay: {}", err);
             }
         }
@@ -33,7 +33,8 @@ impl Nostr {
             .about("Hashrate, supply, blocks until halving, difficulty adjustment and more.")
             .picture(Url::from_str(
                 "https://avatars.githubusercontent.com/u/13464320",
-            )?);
+            )?)
+            .lud16("yuki@stacker.news");
 
         #[cfg(debug_assertions)]
         let metadata = Metadata::new()

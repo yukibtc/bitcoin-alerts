@@ -37,40 +37,33 @@ where
 
 pub fn format_number(num: usize) -> String {
     let mut number: String = num.to_string();
-    let number_len: usize = number.len();
 
-    if number_len > 3 {
-        let mut counter: u8 = 1;
-        loop {
-            if num / usize::pow(1000, counter.into()) > 0 {
-                counter += 1;
-            } else {
-                break;
+    if number.len() > 3 {
+        let reversed: String = number.chars().rev().collect();
+        number.clear();
+        for (index, char) in reversed.chars().into_iter().enumerate() {
+            if index != 0 && index % 3 == 0 {
+                number.push(',');
             }
+            number.push(char);
         }
-
-        counter -= 1;
-
-        let mut formatted_number: Vec<String> =
-            vec![number[0..(number_len - counter as usize * 3)].into()];
-
-        number.replace_range(0..(number_len - counter as usize * 3), "");
-
-        loop {
-            if counter > 0 {
-                if !number[0..3].is_empty() {
-                    formatted_number.push(number[0..3].into());
-                    number.replace_range(0..3, "");
-                }
-
-                counter -= 1
-            } else {
-                break;
-            }
-        }
-
-        number = formatted_number.join(",");
+        number = number.chars().rev().collect();
     }
 
     number
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_format_number() {
+        assert_eq!(format_number(100), "100".to_string());
+        assert_eq!(format_number(1000), "1,000".to_string());
+        assert_eq!(format_number(10000), "10,000".to_string());
+        assert_eq!(format_number(100000), "100,000".to_string());
+        assert_eq!(format_number(1000000), "1,000,000".to_string());
+        assert_eq!(format_number(1000000000), "1,000,000,000".to_string());
+    }
 }

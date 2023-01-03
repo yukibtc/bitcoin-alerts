@@ -9,9 +9,8 @@ use bitcoin::network::constants::Network;
 use clap::Parser;
 use dirs::home_dir;
 use log::Level;
-use nostr_sdk::nostr::key::{FromBech32, Keys};
+use nostr_sdk::nostr::key::{FromSkStr, Keys};
 use ntfy::Auth;
-use secp256k1::SecretKey;
 
 pub mod model;
 
@@ -88,13 +87,8 @@ impl Config {
             None => Level::Info,
         };
 
-        let keys: Keys = match Keys::from_bech32(&config_file.nostr.secret_key) {
-            Ok(keys) => keys,
-            Err(_) => match SecretKey::from_str(&config_file.nostr.secret_key) {
-                Ok(secret_key) => Keys::new(secret_key),
-                Err(_) => panic!("Invalid secret key"),
-            },
-        };
+        let keys: Keys =
+            Keys::from_sk_str(&config_file.nostr.secret_key).expect("Invalid secret key");
 
         let ntfy_auth: Option<Auth> = if let Some(username) = config_file.ntfy.username {
             config_file
