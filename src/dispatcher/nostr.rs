@@ -24,7 +24,7 @@ impl Nostr {
             }
         }
 
-        let _ = client.connect().await;
+        client.connect().await;
 
         #[cfg(not(debug_assertions))]
         let metadata = Metadata::new()
@@ -94,8 +94,8 @@ impl Nostr {
                                 ),
                             };
                         }
-                        Err(err) => {
-                            log::error!("Impossible to send notification {}: {:?}", id, err)
+                        Err(e) => {
+                            log::error!("Impossible to send notification {}: {}", id, e.to_string())
                         }
                     }
                 }
