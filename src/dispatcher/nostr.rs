@@ -1,11 +1,8 @@
-// Copyright (c) 2021-2022 Yuki Kishimoto
+// Copyright (c) 2021-2023 Yuki Kishimoto
 // Distributed under the MIT software license
-
-use std::str::FromStr;
 
 use anyhow::Result;
 use bpns_common::thread;
-use nostr_sdk::nostr::url::Url;
 use nostr_sdk::nostr::Metadata;
 use nostr_sdk::Client;
 
@@ -30,10 +27,8 @@ impl Nostr {
         let metadata = Metadata::new()
             .name("bitcoin_alerts")
             .display_name("Bitcoin Alerts")
-            .about("Hashrate, supply, blocks until halving, difficulty adjustment and more.")
-            .picture(Url::from_str(
-                "https://avatars.githubusercontent.com/u/13464320",
-            )?)
+            .about("Hashrate, supply, blocks until halving, difficulty adjustment and more.\n\nBuild with https://github.com/yukibtc/nostr-rs-sdk")
+            .picture("https://avatars.githubusercontent.com/u/13464320")
             .lud16("yuki@stacker.news");
 
         #[cfg(debug_assertions)]
@@ -41,9 +36,7 @@ impl Nostr {
             .name("test_alerts")
             .display_name("Test Alerts")
             .about("Description")
-            .picture(Url::from_str(
-                "http://mymodernmet.com/wp/wp-content/uploads/2017/03/gabrielius-khiterer-stray-cats-11.jpg",
-            )?);
+            .picture("http://mymodernmet.com/wp/wp-content/uploads/2017/03/gabrielius-khiterer-stray-cats-11.jpg");
 
         if let Err(err) = client.update_profile(metadata).await {
             log::error!("Impossible to update profile metadata: {}", err);
