@@ -22,8 +22,8 @@ env_logger = "0.9.0"
 lazy_static = "1.4.0"
 log = "0.4.14"
 matrix-sdk = { git = "https://github.com/matrix-org/matrix-rust-sdk", rev= "35f598a09582d69a7c73de806c63318ca10b7d39", features = ["anyhow", "sled-state-store", "socks"] }
-nostr-sdk = "0.14"
-# nostr-sdk = { git = "https://github.com/yukibtc/nostr-rs-sdk", rev = "e603051f545cee2cd07a9594fdc67eb8ec59132c" }
+nostr-sdk = "0.16"
+# nostr-sdk = { git = "https://github.com/yukibtc/nostr-rs-sdk", rev = "0b67e3c4b954e1d583204fa9ea9bdf4e3d34143f" }
 ntfy = "0.3.2"
 serde = { version = "1.0.133", features = ["derive"] }
 serde_json = "1.0.74"
