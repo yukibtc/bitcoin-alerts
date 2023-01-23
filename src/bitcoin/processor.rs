@@ -23,7 +23,8 @@ const SUPPLY_ALERTS: &[f64] = &[
     19_900_000.0,
     20_000_000.0,
 ];
-const BLOCK_ALERTS: &[u64] = &[800_000, 900_000, 1_000_000];
+
+const BLOCK_ALERTS: &[u64] = &[773_260, 800_000, 900_000, 1_000_000];
 
 #[derive(Debug)]
 pub enum Error {
