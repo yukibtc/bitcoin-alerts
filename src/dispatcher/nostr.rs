@@ -13,7 +13,7 @@ pub struct Nostr;
 
 impl Nostr {
     pub async fn run() -> Result<()> {
-        let opts = Options::new().wait_for_connection(true).wait_for_send(true);
+        let opts = Options::new().wait_for_send(true);
         let client: Client = Client::new_with_opts(&CONFIG.nostr.keys, opts);
 
         for relay in CONFIG.nostr.relays.iter() {
