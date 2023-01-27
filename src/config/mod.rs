@@ -143,7 +143,7 @@ impl Config {
             },
         };
 
-        println!("{:?}", config);
+        println!("{config:?}");
 
         config
     }

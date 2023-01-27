@@ -102,7 +102,7 @@ impl Matrix {
                         if let Room::Joined(room) = room {
                             let _ = room
                                 .send(
-                                    RoomMessageEventContent::text_plain(format!("{:?}", error)),
+                                    RoomMessageEventContent::text_plain(format!("{error:?}")),
                                     None,
                                 )
                                 .await;

@@ -42,7 +42,7 @@ impl NotificationStore {
         plain_text: &str,
         html: &str,
     ) -> Result<(), Error> {
-        let key: &str = &util::sha512(format!("{}:{}:{}", target, plain_text, html))[..32];
+        let key: &str = &util::sha512(format!("{target}:{plain_text}:{html}"))[..32];
         let value: Notification = Notification {
             target,
             plain_text: plain_text.into(),

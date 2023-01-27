@@ -9,7 +9,7 @@ pub fn bytes_to_hex_string(bytes: Vec<u8>) -> String {
     let mut hash: String = String::new();
     bytes
         .into_iter()
-        .for_each(|b| hash.push_str(format!("{:02X}", b).as_str()));
+        .for_each(|b| hash.push_str(format!("{b:02X}").as_str()));
 
     hash.to_lowercase()
 }
