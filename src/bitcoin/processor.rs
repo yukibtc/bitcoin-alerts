@@ -128,11 +128,16 @@ impl Processor {
         } else {
             let missing_blocks: u64 = (block_height / 210_000 + 1) * 210_000 - block_height;
 
-            if missing_blocks <= 144
-                || (missing_blocks <= 4320 && missing_blocks % 144 == 0)
-                || (missing_blocks <= 51840 && missing_blocks % 4320 == 0)
-                || missing_blocks == 105000
-                || block_height % (6 * 24 * 30 * 2) == 0
+            if missing_blocks <= 144 // Less that a day left, notify every block
+                || (missing_blocks <= 4320 && missing_blocks % 144 == 0) // Less than one month left, notify every day
+                || missing_blocks == 4320 // One month left
+                || (missing_blocks <= 51840 && missing_blocks % 1008 == 0) // Less than one year left, notify every weeks
+                || missing_blocks == 51840 // One year left
+                || (missing_blocks <= 103680 && missing_blocks % 2016 == 0) // Less than two years left, notify every two weeks
+                || missing_blocks == 105000 // Two years left
+                || (missing_blocks <= 1555520 && missing_blocks % 4320 == 0) // Less than three years left, notify every months
+                || missing_blocks == 1555520 // Three years left
+                || block_height % (6 * 24 * 30 * 3) == 0
             {
                 let plain_text: String = format!(
                     "🔥 {} blocks to the next Halving 🔥",
@@ -161,7 +166,7 @@ impl Processor {
             let change: f64 = (difficulty - last_difficulty) / last_difficulty * 100.0;
 
             let plain_text: String =
-                format!("⛏️ Difficulty adj: {:.2} T ({:.2}%) ⛏️", difficulty, change);
+                format!("⛏️ Difficulty adj: {difficulty:.2} T ({change:.2}%) ⛏️");
 
             Self::queue_notification(plain_text.clone(), plain_text)?;
             BITCOIN_STORE.set_last_difficculty(difficulty)?;
@@ -223,8 +228,7 @@ impl Processor {
         };
 
         if current_hashrate > last_hashrate_ath {
-            let plain_text: String =
-                format!("🎉  New hashrate ATH: {:.2} EH/s 🎉", current_hashrate);
+            let plain_text: String = format!("🎉  New hashrate ATH: {current_hashrate:.2} EH/s 🎉");
 
             Self::queue_notification(plain_text.clone(), plain_text)?;
             BITCOIN_STORE.set_last_hashrate_ath(current_hashrate)?;
