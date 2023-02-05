@@ -30,7 +30,7 @@ impl Nostr {
             .display_name("Bitcoin Alerts")
             .about("Hashrate, supply, blocks until halving, difficulty adjustment and more.\n\nBuilt with https://crates.io/crates/nostr-sdk 🦀")
             .picture(Url::parse("https://avatars.githubusercontent.com/u/13464320")?)
-            .lud16("yuki@stacker.news");
+            .lud16("yuki@getalby.com");
 
         #[cfg(debug_assertions)]
         let metadata = Metadata::new()
