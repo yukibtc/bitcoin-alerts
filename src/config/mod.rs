@@ -10,6 +10,7 @@ use clap::Parser;
 use dirs::home_dir;
 use log::Level;
 use nostr_sdk::nostr::key::{FromSkStr, Keys};
+use nostr_sdk::nostr::Url;
 use ntfy::Auth;
 
 pub mod model;
@@ -127,6 +128,11 @@ impl Config {
             nostr: Nostr {
                 enabled: config_file.nostr.enabled.unwrap_or(false),
                 keys,
+                name: config_file.nostr.name.unwrap_or_else(|| String::from("bitcoin_alerts")),
+                display_name: config_file.nostr.display_name.unwrap_or_else(|| String::from("Bitcoin Alerts")),
+                description: config_file.nostr.description.unwrap_or_else(|| String::from("Hashrate, supply, blocks until halving, difficulty adjustment and more.\n\nBuilt with https://crates.io/crates/nostr-sdk 🦀")),
+                picture: config_file.nostr.picture.unwrap_or_else(|| Url::parse("https://avatars.githubusercontent.com/u/13464320").expect("Invalid url")),
+                lud16: config_file.nostr.lud16.unwrap_or_else(|| String::from("yuki@getalby.com")),
                 relays: config_file.nostr.relays,
                 pow_enabled: config_file.nostr.pow_enabled.unwrap_or(false),
                 pow_difficulty: config_file.nostr.pow_difficulty.unwrap_or(20),

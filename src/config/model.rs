@@ -7,6 +7,7 @@ use std::path::PathBuf;
 
 use bitcoin::network::constants::Network;
 use nostr_sdk::nostr::Keys;
+use nostr_sdk::nostr::Url;
 use ntfy::Auth;
 
 pub struct Bitcoin {
@@ -46,6 +47,11 @@ pub struct ConfigFileNtfy {
 pub struct Nostr {
     pub enabled: bool,
     pub keys: Keys,
+    pub name: String,
+    pub display_name: String,
+    pub description: String,
+    pub picture: Url,
+    pub lud16: String,
     pub relays: Vec<String>,
     pub pow_enabled: bool,
     pub pow_difficulty: u8,
@@ -55,6 +61,11 @@ pub struct Nostr {
 pub struct ConfigFileNostr {
     pub enabled: Option<bool>,
     pub secret_key: String,
+    pub name: Option<String>,
+    pub display_name: Option<String>,
+    pub description: Option<String>,
+    pub picture: Option<Url>,
+    pub lud16: Option<String>,
     pub relays: Vec<String>,
     pub pow_enabled: Option<bool>,
     pub pow_difficulty: Option<u8>,

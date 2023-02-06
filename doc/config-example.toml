@@ -45,6 +45,21 @@ rpc_password = "yourpassword"
 # Nostr secret key (bech32 or hex format)
 # secret_key = "nsec1..."
 
+# Name
+# name = "bitcoin_alerts"
+
+# Display name
+# display_name = "Bitcoin Alerts"
+
+# Description
+# description = "Hashrate, supply, blocks until halving, difficulty adjustment and more.\n\nBuilt with https://crates.io/crates/nostr-sdk 🦀"
+
+# Picture
+# picture = "https://avatars.githubusercontent.com/u/13464320"
+
+# LUD16 (Lightning Address)
+# lud16 = "yuki@getalby.com"
+
 # Nostr relays
 # relays = ["wss://relay1.example", "ws://127.0.0.1:8090"]
 

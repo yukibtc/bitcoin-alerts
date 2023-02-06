@@ -3,7 +3,7 @@
 
 use anyhow::Result;
 use bpns_common::thread;
-use nostr_sdk::nostr::{Metadata, Url};
+use nostr_sdk::nostr::Metadata;
 use nostr_sdk::{Client, Options};
 
 use crate::primitives::Target;
@@ -24,20 +24,12 @@ impl Nostr {
 
         client.connect().await;
 
-        #[cfg(not(debug_assertions))]
         let metadata = Metadata::new()
-            .name("bitcoin_alerts")
-            .display_name("Bitcoin Alerts")
-            .about("Hashrate, supply, blocks until halving, difficulty adjustment and more.\n\nBuilt with https://crates.io/crates/nostr-sdk 🦀")
-            .picture(Url::parse("https://avatars.githubusercontent.com/u/13464320")?)
-            .lud16("yuki@getalby.com");
-
-        #[cfg(debug_assertions)]
-        let metadata = Metadata::new()
-            .name("test_alerts")
-            .display_name("Test Alerts")
-            .about("Description")
-            .picture(Url::parse("http://mymodernmet.com/wp/wp-content/uploads/2017/03/gabrielius-khiterer-stray-cats-11.jpg")?);
+            .name(&CONFIG.nostr.name)
+            .display_name(&CONFIG.nostr.display_name)
+            .about(&CONFIG.nostr.description)
+            .picture(CONFIG.nostr.picture.clone())
+            .lud16(&CONFIG.nostr.lud16);
 
         if let Err(err) = client.update_profile(metadata).await {
             log::error!("Impossible to update profile metadata: {}", err);
