@@ -17,12 +17,7 @@ impl Nostr {
         let client: Client = Client::with_opts(&CONFIG.nostr.keys, opts);
 
         for url in CONFIG.nostr.relays.iter() {
-            if let Err(e) = client.add_relay(url.as_str(), None).await {
-                log::error!("Impossible to add relay: {}", e);
-            }
-            if let Err(e) = client.add_recommended_relay(url.as_str()).await {
-                log::error!("Impossible to add recommended relay: {}", e);
-            }
+            client.add_relay(url.as_str(), None).await?;
         }
 
         client.connect().await;
