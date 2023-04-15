@@ -53,7 +53,6 @@ pub struct Nostr {
     pub picture: Url,
     pub lud16: String,
     pub relays: Vec<String>,
-    pub pow_enabled: bool,
     pub pow_difficulty: u8,
 }
 
@@ -67,7 +66,6 @@ pub struct ConfigFileNostr {
     pub picture: Option<Url>,
     pub lud16: Option<String>,
     pub relays: Vec<String>,
-    pub pow_enabled: Option<bool>,
     pub pow_difficulty: Option<u8>,
 }
 
@@ -140,8 +138,8 @@ impl fmt::Debug for Nostr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{{ enabled: {}, relays: {:?}, pow_enabled: {}, pow_difficulty: {} }}",
-            self.enabled, self.relays, self.pow_enabled, self.pow_difficulty
+            "{{ enabled: {}, relays: {:?}, pow_difficulty: {} }}",
+            self.enabled, self.relays, self.pow_difficulty
         )
     }
 }

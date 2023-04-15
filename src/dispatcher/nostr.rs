@@ -13,12 +13,15 @@ pub struct Nostr;
 
 impl Nostr {
     pub async fn run() -> Result<()> {
-        let opts = Options::new().wait_for_send(true);
-        let client: Client = Client::new_with_opts(&CONFIG.nostr.keys, opts);
+        let opts = Options::new().difficulty(CONFIG.nostr.pow_difficulty);
+        let client: Client = Client::with_opts(&CONFIG.nostr.keys, opts);
 
-        for relay in CONFIG.nostr.relays.iter() {
-            if let Err(err) = client.add_relay(relay.as_str(), None).await {
-                log::error!("Impossible to add relay: {}", err);
+        for url in CONFIG.nostr.relays.iter() {
+            if let Err(e) = client.add_relay(url.as_str(), None).await {
+                log::error!("Impossible to add relay: {}", e);
+            }
+            if let Err(e) = client.add_recommended_relay(url.as_str()).await {
+                log::error!("Impossible to add recommended relay: {}", e);
             }
         }
 
@@ -31,7 +34,7 @@ impl Nostr {
             .picture(CONFIG.nostr.picture.clone())
             .lud16(&CONFIG.nostr.lud16);
 
-        if let Err(err) = client.update_profile(metadata).await {
+        if let Err(err) = client.set_metadata(metadata).await {
             log::error!("Impossible to update profile metadata: {}", err);
         }
 
@@ -62,21 +65,10 @@ impl Nostr {
                     client.connect().await;
 
                     for (id, notification) in notifications.into_iter() {
-                        let result = if CONFIG.nostr.pow_enabled {
-                            client
-                                .publish_pow_text_note(
-                                    &notification.plain_text,
-                                    &[],
-                                    CONFIG.nostr.pow_difficulty,
-                                )
-                                .await
-                        } else {
-                            client
-                                .publish_text_note(&notification.plain_text, &[])
-                                .await
-                        };
-
-                        match result {
+                        match client
+                            .publish_text_note(&notification.plain_text, &[])
+                            .await
+                        {
                             Ok(_) => {
                                 log::info!("Sent notification: {}", notification.plain_text);
 

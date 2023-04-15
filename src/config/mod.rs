@@ -134,8 +134,7 @@ impl Config {
                 picture: config_file.nostr.picture.unwrap_or_else(|| Url::parse("https://avatars.githubusercontent.com/u/13464320").expect("Invalid url")),
                 lud16: config_file.nostr.lud16.unwrap_or_else(|| String::from("yuki@getalby.com")),
                 relays: config_file.nostr.relays,
-                pow_enabled: config_file.nostr.pow_enabled.unwrap_or(false),
-                pow_difficulty: config_file.nostr.pow_difficulty.unwrap_or(20),
+                pow_difficulty: config_file.nostr.pow_difficulty.unwrap_or(0),
             },
             matrix: Matrix {
                 enabled: config_file.matrix.enabled.unwrap_or(false),
