@@ -41,7 +41,7 @@ pub fn format_number(num: usize) -> String {
     if number.len() > 3 {
         let reversed: String = number.chars().rev().collect();
         number.clear();
-        for (index, char) in reversed.chars().into_iter().enumerate() {
+        for (index, char) in reversed.chars().enumerate() {
             if index != 0 && index % 3 == 0 {
                 number.push(',');
             }
