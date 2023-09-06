@@ -25,7 +25,7 @@ const SUPPLY_ALERTS: &[f64] = &[
 ];
 
 const BLOCK_ALERTS: &[u64] = &[
-    773_260, 777_777, 800_000, 888_888, 900_000, 999_999, 1_000_000,
+    810_000, 820_000, 830_000, 840_000, 888_888, 900_000, 999_999, 1_000_000,
 ];
 
 #[derive(Debug)]
@@ -133,11 +133,11 @@ impl Processor {
             if missing_blocks <= 144 // Less that a day left, notify every block
                 || (missing_blocks <= 4320 && missing_blocks % 144 == 0) // Less than one month left, notify every day
                 || missing_blocks == 4320 // One month left
-                || (missing_blocks <= 51840 && missing_blocks % 1008 == 0) // Less than one year left, notify every weeks
+                || (missing_blocks <= 51840 && missing_blocks % 432 == 0) // Less than one year left, notify every 3 days
                 || missing_blocks == 51840 // One year left
-                || (missing_blocks <= 103680 && missing_blocks % 2016 == 0) // Less than two years left, notify every two weeks
+                || (missing_blocks <= 103680 && missing_blocks % 1008 == 0) // Less than two years left, notify every week
                 || missing_blocks == 105000 // Two years left
-                || (missing_blocks <= 1555520 && missing_blocks % 4320 == 0) // Less than three years left, notify every months
+                || (missing_blocks <= 1555520 && missing_blocks % 2016 == 0) // Less than three years left, notify two weeks
                 || missing_blocks == 1555520 // Three years left
                 || block_height % (6 * 24 * 30 * 3) == 0
             {

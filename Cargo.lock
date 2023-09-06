@@ -1711,7 +1711,7 @@ dependencies = [
 [[package]]
 name = "nostr"
 version = "0.23.0"
-source = "git+https://github.com/rust-nostr/nostr?rev=ec3e9b299bf54f9610eefac49a3b5e62b17cec57#ec3e9b299bf54f9610eefac49a3b5e62b17cec57"
+source = "git+https://github.com/rust-nostr/nostr?rev=e5e026178fbce1cdad16302a3bf2566f3c35279f#e5e026178fbce1cdad16302a3bf2566f3c35279f"
 dependencies = [
  "base64 0.21.3",
  "bip39",
@@ -1730,7 +1730,7 @@ dependencies = [
 [[package]]
 name = "nostr-sdk"
 version = "0.23.0"
-source = "git+https://github.com/rust-nostr/nostr?rev=ec3e9b299bf54f9610eefac49a3b5e62b17cec57#ec3e9b299bf54f9610eefac49a3b5e62b17cec57"
+source = "git+https://github.com/rust-nostr/nostr?rev=e5e026178fbce1cdad16302a3bf2566f3c35279f#e5e026178fbce1cdad16302a3bf2566f3c35279f"
 dependencies = [
  "async-utility",
  "nostr",
@@ -1744,7 +1744,7 @@ dependencies = [
 [[package]]
 name = "nostr-sdk-net"
 version = "0.23.1"
-source = "git+https://github.com/rust-nostr/nostr?rev=ec3e9b299bf54f9610eefac49a3b5e62b17cec57#ec3e9b299bf54f9610eefac49a3b5e62b17cec57"
+source = "git+https://github.com/rust-nostr/nostr?rev=e5e026178fbce1cdad16302a3bf2566f3c35279f#e5e026178fbce1cdad16302a3bf2566f3c35279f"
 dependencies = [
  "futures-util",
  "thiserror",
