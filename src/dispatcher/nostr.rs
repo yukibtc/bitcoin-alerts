@@ -1,8 +1,10 @@
 // Copyright (c) 2021-2023 Yuki Kishimoto
 // Distributed under the MIT software license
 
+use std::thread;
+use std::time::Duration;
+
 use anyhow::Result;
-use bpns_common::thread;
 use nostr_sdk::nostr::Metadata;
 use nostr_sdk::{Client, Options};
 
@@ -30,31 +32,33 @@ impl Nostr {
             .lud16(&CONFIG.nostr.lud16);
 
         if let Err(err) = client.set_metadata(metadata).await {
-            log::error!("Impossible to update profile metadata: {}", err);
+            tracing::error!("Impossible to update profile metadata: {}", err);
         }
 
         if let Err(e) = client.disconnect().await {
-            log::error!("Impossible to disconnect relays: {}", e);
+            tracing::error!("Impossible to disconnect relays: {}", e);
         }
 
         tokio::spawn(async move {
-            log::info!("Nostr Dispatcher started");
+            tracing::info!("Nostr Dispatcher started");
 
-            thread::sleep(30);
+            thread::sleep(Duration::from_secs(30));
 
             loop {
-                log::debug!("Process pending notifications");
+                tracing::debug!("Process pending notifications");
 
-                let notifications = match NOTIFICATION_STORE
-                    .get_notifications_by_target(Target::Nostr)
-                {
-                    Ok(result) => result,
-                    Err(error) => {
-                        log::error!("Impossible to get nostr notifications from db: {:?}", error);
-                        thread::sleep(60);
-                        continue;
-                    }
-                };
+                let notifications =
+                    match NOTIFICATION_STORE.get_notifications_by_target(Target::Nostr) {
+                        Ok(result) => result,
+                        Err(error) => {
+                            tracing::error!(
+                                "Impossible to get nostr notifications from db: {:?}",
+                                error
+                            );
+                            thread::sleep(Duration::from_secs(60));
+                            continue;
+                        }
+                    };
 
                 if !notifications.is_empty() {
                     client.connect().await;
@@ -65,11 +69,11 @@ impl Nostr {
                             .await
                         {
                             Ok(_) => {
-                                log::info!("Sent notification: {}", notification.plain_text);
+                                tracing::info!("Sent notification: {}", notification.plain_text);
 
                                 match NOTIFICATION_STORE.delete_notification(id.as_str()) {
-                                    Ok(_) => log::debug!("Notification {} deleted", id),
-                                    Err(error) => log::error!(
+                                    Ok(_) => tracing::debug!("Notification {} deleted", id),
+                                    Err(error) => tracing::error!(
                                         "Impossible to delete notification {}: {:#?}",
                                         id,
                                         error
@@ -77,7 +81,7 @@ impl Nostr {
                                 };
                             }
                             Err(e) => {
-                                log::error!(
+                                tracing::error!(
                                     "Impossible to send notification {}: {}",
                                     id,
                                     e.to_string()
@@ -87,12 +91,12 @@ impl Nostr {
                     }
 
                     if let Err(e) = client.disconnect().await {
-                        log::error!("Impossible to disconnect relays: {}", e);
+                        tracing::error!("Impossible to disconnect relays: {}", e);
                     }
                 }
 
-                log::debug!("Wait for new notifications");
-                thread::sleep(120);
+                tracing::debug!("Wait for new notifications");
+                thread::sleep(Duration::from_secs(120));
             }
         });
 

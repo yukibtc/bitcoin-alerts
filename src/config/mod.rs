@@ -8,10 +8,10 @@ use std::str::FromStr;
 use bitcoin::network::constants::Network;
 use clap::Parser;
 use dirs::home_dir;
-use log::Level;
 use nostr_sdk::nostr::key::{FromSkStr, Keys};
 use nostr_sdk::nostr::Url;
 use ntfy::Auth;
+use tracing::Level;
 
 pub mod model;
 
@@ -20,7 +20,7 @@ use self::model::{Bitcoin, ConfigFile, Matrix, Nostr, Ntfy};
 
 fn default_dir() -> PathBuf {
     let home: PathBuf = home_dir().unwrap_or_else(|| {
-        log::error!("Unknown home directory");
+        tracing::error!("Unknown home directory");
         std::process::exit(1)
     });
     home.join(".bitcoin_alerts")
@@ -32,10 +32,10 @@ fn default_config_file() -> PathBuf {
     default
 }
 
-#[derive(Parser, Debug)]
+#[derive(Debug, Parser)]
 #[clap(author, version, about, long_about = None)]
 struct Args {
-    #[clap(short, long, parse(from_os_str))]
+    #[clap(short, long)]
     config_file: Option<PathBuf>,
 }
 
@@ -51,7 +51,7 @@ impl Config {
         let config_file: ConfigFile = match Self::read_config_file(&config_file_path) {
             Ok(data) => data,
             Err(error) => {
-                log::error!("Impossible to read config file at {:?}", config_file_path);
+                tracing::error!("Impossible to read config file at {:?}", config_file_path);
                 panic!("{}", error);
             }
         };
@@ -67,15 +67,15 @@ impl Config {
         let default_bitcoin_rpc_port: u16 = match network {
             Network::Bitcoin => 8332,
             Network::Testnet => 18332,
-            Network::Regtest => 18443,
             Network::Signet => 38332,
+            _ => 18443,
         };
 
         let folder: &str = match network {
             Network::Bitcoin => "bitcoin",
             Network::Testnet => "testnet",
-            Network::Regtest => "regtest",
             Network::Signet => "signet",
+            _ => "regtest",
         };
 
         let main_path: PathBuf = config_file
@@ -84,8 +84,8 @@ impl Config {
             .join(folder);
 
         let log_level: Level = match config_file.log_level {
-            Some(log_level) => Level::from_str(log_level.as_str()).unwrap_or(Level::Info),
-            None => Level::Info,
+            Some(log_level) => Level::from_str(log_level.as_str()).unwrap_or(Level::INFO),
+            None => Level::INFO,
         };
 
         let keys: Keys =

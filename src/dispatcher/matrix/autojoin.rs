@@ -16,7 +16,7 @@ pub async fn on_stripped_state_member(
     let user_id_boxed: Box<UserId> = match client.user_id().await {
         Some(value) => value,
         None => {
-            log::warn!("No user_id found");
+            tracing::warn!("No user_id found");
             return;
         }
     };
@@ -27,19 +27,19 @@ pub async fn on_stripped_state_member(
 
     tokio::spawn(async move {
         if let Room::Invited(room) = room {
-            log::info!("Autojoining room {}", room.room_id());
+            tracing::info!("Autojoining room {}", room.room_id());
             let mut delay = 2;
 
-            log::debug!("Starting autojoin room loop");
+            tracing::debug!("Starting autojoin room loop");
 
             loop {
                 match room.accept_invitation().await {
                     Ok(_) => {
-                        log::info!("Successfully joined room {}", room.room_id());
+                        tracing::info!("Successfully joined room {}", room.room_id());
                         break;
                     }
                     Err(err) => {
-                        log::error!(
+                        tracing::error!(
                             "Failed to join room {} ({:?}), retrying in {}s",
                             room.room_id(),
                             err,
@@ -50,14 +50,14 @@ pub async fn on_stripped_state_member(
                         delay *= 2;
 
                         if delay > 3600 {
-                            log::error!("Can't join room {} ({:?})", room.room_id(), err);
+                            tracing::error!("Can't join room {} ({:?})", room.room_id(), err);
                             break;
                         }
                     }
                 }
             }
 
-            log::debug!("Out of autojoin room loop");
+            tracing::debug!("Out of autojoin room loop");
         }
     });
 }

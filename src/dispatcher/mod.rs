@@ -1,8 +1,9 @@
 // Copyright (c) 2021-2022 Yuki Kishimoto
 // Distributed under the MIT software license
 
+use std::thread;
+
 use anyhow::Result;
-use bpns_common::thread;
 
 mod matrix;
 mod nostr;

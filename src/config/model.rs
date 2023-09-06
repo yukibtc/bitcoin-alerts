@@ -9,6 +9,7 @@ use bitcoin::network::constants::Network;
 use nostr_sdk::nostr::Keys;
 use nostr_sdk::nostr::Url;
 use ntfy::Auth;
+use tracing::Level;
 
 pub struct Bitcoin {
     pub network: Network,
@@ -93,7 +94,7 @@ pub struct ConfigFileMatrix {
 #[derive(Debug)]
 pub struct Config {
     pub main_path: PathBuf,
-    pub log_level: log::Level,
+    pub log_level: Level,
     pub bitcoin: Bitcoin,
     pub ntfy: Ntfy,
     pub nostr: Nostr,

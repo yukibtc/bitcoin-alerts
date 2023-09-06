@@ -3,16 +3,8 @@
 
 use std::str::FromStr;
 
-use sha2::{Digest, Sha512};
-
-pub fn bytes_to_hex_string(bytes: Vec<u8>) -> String {
-    let mut hash: String = String::new();
-    bytes
-        .into_iter()
-        .for_each(|b| hash.push_str(format!("{b:02X}").as_str()));
-
-    hash.to_lowercase()
-}
+use bitcoin::hashes::sha512::Hash as Sha512Hash;
+use bitcoin::hashes::Hash;
 
 pub fn bytes_to_number<T>(bytes: Vec<u8>) -> Option<T>
 where
@@ -31,8 +23,7 @@ pub fn sha512<T>(value: T) -> String
 where
     T: AsRef<[u8]>,
 {
-    let hasher = Sha512::digest(value);
-    bytes_to_hex_string(hasher.to_vec())
+    Sha512Hash::hash(value.as_ref()).to_string()
 }
 
 pub fn format_number(num: usize) -> String {

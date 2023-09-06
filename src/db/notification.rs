@@ -82,6 +82,6 @@ impl NotificationStore {
 
 impl Drop for NotificationStore {
     fn drop(&mut self) {
-        log::trace!("Closing Database");
+        tracing::trace!("Closing Database");
     }
 }

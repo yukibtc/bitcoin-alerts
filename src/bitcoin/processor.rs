@@ -2,11 +2,11 @@
 // Distributed under the MIT software license
 
 use std::convert::From;
-use std::time::Instant;
+use std::thread;
+use std::time::{Duration, Instant};
 
 use bitcoin::network::constants::Network;
 use bitcoin_rpc::{MiningInfo, TxOutSetInfo};
-use bpns_common::thread;
 
 use crate::bitcoin::RPC;
 use crate::primitives::Target;
@@ -38,20 +38,20 @@ pub struct Processor;
 
 impl Processor {
     pub fn run() {
-        thread::spawn("block_processor", {
-            log::info!("Bitcoin Block Processor started");
+        thread::spawn({
+            tracing::info!("Bitcoin Block Processor started");
 
             let mut delay = 30; // Delay seconds
 
             move || loop {
                 let block_height: u64 = match RPC.get_block_count() {
                     Ok(n) => {
-                        log::debug!("Current block is {}", n);
+                        tracing::debug!("Current block is {}", n);
                         n
                     }
                     Err(err) => {
-                        log::error!("Get block height: {:?}", err);
-                        thread::sleep(120);
+                        tracing::error!("Get block height: {:?}", err);
+                        thread::sleep(Duration::from_secs(60));
                         continue;
                     }
                 };
@@ -64,11 +64,11 @@ impl Processor {
                     }
                 };
 
-                log::debug!("Last processed block is {}", last_processed_block);
+                tracing::debug!("Last processed block is {}", last_processed_block);
 
                 if block_height <= last_processed_block {
-                    log::debug!("Wait for new block");
-                    thread::sleep(120);
+                    tracing::debug!("Wait for new block");
+                    thread::sleep(Duration::from_secs(60));
                     continue;
                 }
 
@@ -79,7 +79,7 @@ impl Processor {
                         delay = 30;
 
                         let elapsed_time = start.elapsed().as_millis();
-                        log::trace!(
+                        tracing::trace!(
                             "Block {} processed in {} ms",
                             next_block_to_process,
                             elapsed_time
@@ -88,13 +88,13 @@ impl Processor {
                     }
                     Err(err) => {
                         if delay > 3600 {
-                            log::error!("Impossible to process block: {:?}", err);
+                            tracing::error!("Impossible to process block: {:?}", err);
                             std::process::exit(0x1);
                         }
 
-                        log::error!("Process block: {:?} - retrying in {} sec", err, delay);
+                        tracing::error!("Process block: {:?} - retrying in {} sec", err, delay);
 
-                        thread::sleep(delay);
+                        thread::sleep(Duration::from_secs(delay));
 
                         delay *= 2;
                     }
@@ -184,7 +184,7 @@ impl Processor {
             let txoutset_info: TxOutSetInfo = RPC.get_tx_out_set_info()?;
             let mut total_supply: f64 = txoutset_info.total_amount;
 
-            log::debug!(
+            tracing::debug!(
                 "txoutset_info.height: {} - block_height: {}",
                 txoutset_info.height,
                 block_height
@@ -200,7 +200,7 @@ impl Processor {
         }
 
         if let Ok(last_supply) = BITCOIN_STORE.get_last_supply() {
-            log::debug!("Total supply: {} BTC", last_supply);
+            tracing::debug!("Total supply: {} BTC", last_supply);
 
             for supply_alert in SUPPLY_ALERTS.iter() {
                 if last_supply >= *supply_alert && last_supply - current_reward < *supply_alert {
@@ -284,8 +284,10 @@ impl Processor {
             plain_text.as_str(),
             html.as_str(),
         ) {
-            Ok(_) => log::info!("Queued a new notification for {}", target),
-            Err(err) => log::error!("Impossible to queue notification for {}: {:?}", target, err),
+            Ok(_) => tracing::info!("Queued a new notification for {}", target),
+            Err(err) => {
+                tracing::error!("Impossible to queue notification for {}: {:?}", target, err)
+            }
         };
 
         Ok(())

@@ -94,6 +94,6 @@ impl BitcoinStore {
 
 impl Drop for BitcoinStore {
     fn drop(&mut self) {
-        log::trace!("Closing Database");
+        tracing::trace!("Closing Database");
     }
 }

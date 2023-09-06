@@ -1,10 +1,10 @@
 // Copyright (c) 2021-2022 Yuki Kishimoto
 // Distributed under the MIT software license
 
+use std::thread;
 use std::time::Instant;
 
 use anyhow::{anyhow, Result};
-use bpns_common::thread;
 use matrix_sdk::config::SyncSettings;
 use matrix_sdk::room::Room;
 use matrix_sdk::ruma::events::room::message::{
@@ -49,7 +49,7 @@ impl Matrix {
 
         let client: Client = client_builder.build().await?;
 
-        log::debug!("Checking session...");
+        tracing::debug!("Checking session...");
 
         if MATRIX_STORE.session_exist(user_id) {
             let session_store = MATRIX_STORE
@@ -64,25 +64,25 @@ impl Matrix {
 
             client.restore_login(session).await?;
 
-            log::debug!("Session restored from database");
+            tracing::debug!("Session restored from database");
         } else {
-            log::debug!("Session not found into database");
-            log::debug!("Login with credentials...");
+            tracing::debug!("Session not found into database");
+            tracing::debug!("Login with credentials...");
             let username = user_id_boxed.localpart();
             client.login(username, password, None, None).await?;
 
-            log::debug!("Getting session data...");
+            tracing::debug!("Getting session data...");
 
             if let Some(session) = client.session().await {
-                log::debug!("Saving session data into database...");
+                tracing::debug!("Saving session data into database...");
                 MATRIX_STORE
                     .create_session(user_id, &session.access_token, session.device_id.as_ref())
                     .map_err(|e| anyhow!("{:?}", e))?;
 
-                log::debug!("Session saved to database");
+                tracing::debug!("Session saved to database");
             } else {
-                log::error!("Impossible to get and save session");
-                log::warn!("The bot can continue to work without saving the session but if you are using an encrypted room, on the next restart, the bot will not be able to read the messages");
+                tracing::error!("Impossible to get and save session");
+                tracing::warn!("The bot can continue to work without saving the session but if you are using an encrypted room, on the next restart, the bot will not be able to read the messages");
             }
         }
 
@@ -91,7 +91,7 @@ impl Matrix {
             .set_display_name(Some("Bitcoin Alerts"))
             .await?;
 
-        log::info!("Matrix Bot started");
+        tracing::info!("Matrix Bot started");
 
         client
             .register_event_handler(autojoin::on_stripped_state_member)
@@ -131,7 +131,7 @@ impl Matrix {
                 _ => return Ok(()),
             };
 
-            log::debug!("Message received: {}", msg_body);
+            tracing::debug!("Message received: {}", msg_body);
 
             let start = Instant::now();
 
@@ -139,7 +139,7 @@ impl Matrix {
             let room_id: &str = room.room_id().as_str();
 
             if !CONFIG.matrix.admins.contains(&user_id.to_string()) {
-                log::warn!("{} unathorized", user_id);
+                tracing::warn!("{} unathorized", user_id);
                 let _ = room.redact(&event.event_id, None, None).await;
                 return Ok(());
             }
@@ -189,7 +189,7 @@ impl Matrix {
                 room.send(content, None).await?;
             }
 
-            log::trace!(
+            tracing::trace!(
                 "{} command processed in {} ms",
                 command,
                 start.elapsed().as_millis()
@@ -202,13 +202,13 @@ impl Matrix {
     fn process_pending_notifications(bot: Client) {
         tokio::spawn(async move {
             loop {
-                log::debug!("Process pending notifications");
+                tracing::debug!("Process pending notifications");
 
                 let mut notifications =
                     match NOTIFICATION_STORE.get_notifications_by_target(Target::Matrix) {
                         Ok(result) => tokio_stream::iter(result),
                         Err(error) => {
-                            log::error!("Impossible to get notifications from db: {:?}", error);
+                            tracing::error!("Impossible to get notifications from db: {:?}", error);
                             sleep(Duration::from_secs(60)).await;
                             continue;
                         }
@@ -217,7 +217,7 @@ impl Matrix {
                 let mut subscriptions = match MATRIX_STORE.get_subscriptions() {
                     Ok(result) => tokio_stream::iter(result),
                     Err(error) => {
-                        log::error!("Impossible to get subscriptions from db: {:?}", error);
+                        tracing::error!("Impossible to get subscriptions from db: {:?}", error);
                         sleep(Duration::from_secs(60)).await;
                         continue;
                     }
@@ -239,10 +239,10 @@ impl Matrix {
 
                         match room.send(content, None).await {
                             Ok(_) => {
-                                log::info!("Sent notification: {}", plain_text);
+                                tracing::info!("Sent notification: {}", plain_text);
                                 notification_sent = true;
                             }
-                            Err(_) => log::error!("Impossible to send notification"),
+                            Err(_) => tracing::error!("Impossible to send notification"),
                         };
 
                         sleep(Duration::from_millis(100)).await;
@@ -252,8 +252,8 @@ impl Matrix {
 
                     if notification_sent {
                         match NOTIFICATION_STORE.delete_notification(notification_id.as_str()) {
-                            Ok(_) => log::debug!("Notification {} deleted", notification_id),
-                            Err(error) => log::error!(
+                            Ok(_) => tracing::debug!("Notification {} deleted", notification_id),
+                            Err(error) => tracing::error!(
                                 "Impossible to delete notification {}: {:#?}",
                                 notification_id,
                                 error
@@ -262,7 +262,7 @@ impl Matrix {
                     }
                 }
 
-                log::debug!("Wait for new notifications");
+                tracing::debug!("Wait for new notifications");
                 sleep(Duration::from_secs(30)).await;
             }
         });

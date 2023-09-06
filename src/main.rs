@@ -1,6 +1,9 @@
 // Copyright (c) 2021-2022 Yuki Kishimoto
 // Distributed under the MIT software license
 
+use std::thread;
+use std::time::Duration;
+
 #[macro_use]
 extern crate lazy_static;
 #[macro_use]
@@ -38,6 +41,6 @@ async fn main() -> Result<()> {
     Dispatcher::run().await?;
 
     loop {
-        bpns_common::thread::sleep(120);
+        thread::sleep(Duration::from_secs(60));
     }
 }

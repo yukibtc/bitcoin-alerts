@@ -20,21 +20,23 @@ impl Ntfy {
         )?;
 
         tokio::spawn(async move {
-            log::info!("Ntfy Dispatcher started");
+            tracing::info!("Ntfy Dispatcher started");
 
             loop {
-                log::debug!("Process pending notifications");
+                tracing::debug!("Process pending notifications");
 
-                let notifications = match NOTIFICATION_STORE
-                    .get_notifications_by_target(Target::Ntfy)
-                {
-                    Ok(result) => result,
-                    Err(error) => {
-                        log::error!("Impossible to get ntfy notifications from db: {:?}", error);
-                        tokio::time::sleep(Duration::from_secs(60)).await;
-                        continue;
-                    }
-                };
+                let notifications =
+                    match NOTIFICATION_STORE.get_notifications_by_target(Target::Ntfy) {
+                        Ok(result) => result,
+                        Err(error) => {
+                            tracing::error!(
+                                "Impossible to get ntfy notifications from db: {:?}",
+                                error
+                            );
+                            tokio::time::sleep(Duration::from_secs(60)).await;
+                            continue;
+                        }
+                    };
 
                 for (id, notification) in notifications.into_iter() {
                     let payload = Payload::new(&CONFIG.ntfy.topic)
@@ -43,11 +45,11 @@ impl Ntfy {
 
                     match dispatcher.send(&payload).await {
                         Ok(_) => {
-                            log::info!("Sent notification: {}", notification.plain_text);
+                            tracing::info!("Sent notification: {}", notification.plain_text);
 
                             match NOTIFICATION_STORE.delete_notification(id.as_str()) {
-                                Ok(_) => log::debug!("Notification {} deleted", id),
-                                Err(error) => log::error!(
+                                Ok(_) => tracing::debug!("Notification {} deleted", id),
+                                Err(error) => tracing::error!(
                                     "Impossible to delete notification {}: {:#?}",
                                     id,
                                     error
@@ -55,12 +57,12 @@ impl Ntfy {
                             };
                         }
                         Err(err) => {
-                            log::error!("Impossible to send notification {}: {:?}", id, err)
+                            tracing::error!("Impossible to send notification {}: {:?}", id, err)
                         }
                     };
                 }
 
-                log::debug!("Wait for new notifications");
+                tracing::debug!("Wait for new notifications");
                 tokio::time::sleep(Duration::from_secs(30)).await;
             }
         });

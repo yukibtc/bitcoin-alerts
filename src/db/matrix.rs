@@ -81,6 +81,6 @@ impl MatrixStore {
 
 impl Drop for MatrixStore {
     fn drop(&mut self) {
-        log::trace!("Closing Database");
+        tracing::trace!("Closing Database");
     }
 }

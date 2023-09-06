@@ -1,13 +1,14 @@
 // Copyright (c) 2021-2022 Yuki Kishimoto
 // Distributed under the MIT software license
 
+use std::thread;
+use std::time::Duration;
+
 use bitcoin_rpc::{BlockchainInfo, Client, NetworkInfo};
-use bpns_common::thread;
 
 mod processor;
 
-use processor::Processor;
-
+use self::processor::Processor;
 use crate::CONFIG;
 
 lazy_static! {
@@ -22,33 +23,36 @@ pub struct Bitcoin;
 
 impl Bitcoin {
     pub fn run() {
-        thread::spawn("bitcoin", {
+        thread::spawn({
             move || {
                 loop {
                     let blockchain_info: BlockchainInfo = match RPC.get_blockchain_info() {
                         Ok(data) => data,
                         Err(error) => {
-                            log::error!("Get blockchain info: {:?} - retrying in 60 sec", error);
-                            thread::sleep(60);
+                            tracing::error!(
+                                "Get blockchain info: {:?} - retrying in 60 sec",
+                                error
+                            );
+                            thread::sleep(Duration::from_secs(60));
                             continue;
                         }
                     };
                     let network_info: NetworkInfo = match RPC.get_network_info() {
                         Ok(data) => data,
                         Err(error) => {
-                            log::error!("Get network info: {:?} - retrying in 60 sec", error);
-                            thread::sleep(60);
+                            tracing::error!("Get network info: {:?} - retrying in 60 sec", error);
+                            thread::sleep(Duration::from_secs(60));
                             continue;
                         }
                     };
 
                     if network_info.version < 22_00_00 {
-                        log::error!("This application requires Bitcoin Core 22.0+");
+                        tracing::error!("This application requires Bitcoin Core 22.0+");
                         panic!("Bitcoin Core version incompatible");
                     }
 
                     if !network_info.network_active {
-                        log::error!("This application requires active Bitcoin P2P network.");
+                        tracing::error!("This application requires active Bitcoin P2P network.");
                         panic!("P2P network not enabled");
                     }
 
@@ -58,7 +62,7 @@ impl Bitcoin {
                         break;
                     }
 
-                    log::info!(
+                    tracing::info!(
                         "Waiting to download {} blocks{}",
                         left_blocks,
                         if blockchain_info.initial_block_download {
@@ -67,12 +71,10 @@ impl Bitcoin {
                             ""
                         }
                     );
-                    thread::sleep(120);
+                    thread::sleep(Duration::from_secs(60));
                 }
 
                 Processor::run();
-
-                Ok(())
             }
         });
     }
