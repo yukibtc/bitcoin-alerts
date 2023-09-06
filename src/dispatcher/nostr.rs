@@ -15,7 +15,9 @@ pub struct Nostr;
 
 impl Nostr {
     pub async fn run() -> Result<()> {
-        let opts = Options::new().difficulty(CONFIG.nostr.pow_difficulty);
+        let opts = Options::new()
+            .wait_for_connection(true)
+            .difficulty(CONFIG.nostr.pow_difficulty);
         let client: Client = Client::with_opts(&CONFIG.nostr.keys, opts);
 
         for url in CONFIG.nostr.relays.iter() {
@@ -35,14 +37,8 @@ impl Nostr {
             tracing::error!("Impossible to update profile metadata: {}", err);
         }
 
-        if let Err(e) = client.disconnect().await {
-            tracing::error!("Impossible to disconnect relays: {}", e);
-        }
-
         tokio::spawn(async move {
             tracing::info!("Nostr Dispatcher started");
-
-            thread::sleep(Duration::from_secs(30));
 
             loop {
                 tracing::debug!("Process pending notifications");
@@ -61,8 +57,6 @@ impl Nostr {
                     };
 
                 if !notifications.is_empty() {
-                    client.connect().await;
-
                     for (id, notification) in notifications.into_iter() {
                         match client
                             .publish_text_note(&notification.plain_text, &[])
@@ -89,14 +83,10 @@ impl Nostr {
                             }
                         }
                     }
-
-                    if let Err(e) = client.disconnect().await {
-                        tracing::error!("Impossible to disconnect relays: {}", e);
-                    }
                 }
 
                 tracing::debug!("Wait for new notifications");
-                thread::sleep(Duration::from_secs(120));
+                thread::sleep(Duration::from_secs(60));
             }
         });
 
