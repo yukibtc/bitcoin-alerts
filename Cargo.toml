@@ -19,7 +19,7 @@ clap = { version = "4.4", features = ["derive"] }
 dirs = "5.0"
 lazy_static = "1.4"
 matrix-sdk = { git = "https://github.com/matrix-org/matrix-rust-sdk", rev= "35f598a09582d69a7c73de806c63318ca10b7d39", features = ["anyhow", "sled-state-store", "socks"] }
-nostr-sdk = "0.23"
+nostr-sdk = { git = "https://github.com/rust-nostr/nostr", rev = "ec3e9b299bf54f9610eefac49a3b5e62b17cec57", default-features = false }
 ntfy = "0.3"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"

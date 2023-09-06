@@ -547,13 +547,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "chacha20"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c3613f74bd2eac03dad61bd53dbe620703d4371614fe0bc3b9f04dd36fe4e818"
+dependencies = [
+ "cfg-if",
+ "cipher 0.4.4",
+ "cpufeatures",
+]
+
+[[package]]
 name = "chacha20poly1305"
 version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a18446b09be63d457bbec447509e85f662f32952b035ce892290396bc0b0cff5"
 dependencies = [
  "aead",
- "chacha20",
+ "chacha20 0.8.2",
  "cipher 0.3.0",
  "poly1305",
  "zeroize",
@@ -1262,20 +1273,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "hyper-rustls"
-version = "0.24.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8d78e1e73ec14cf7375674f74d7dde185c8206fd9dea6fb6295e8a98098aaa97"
-dependencies = [
- "futures-util",
- "http",
- "hyper",
- "rustls",
- "tokio",
- "tokio-rustls",
-]
-
-[[package]]
 name = "hyper-tls"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1714,35 +1711,31 @@ dependencies = [
 [[package]]
 name = "nostr"
 version = "0.23.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "525a8f75106f4eeb1fedaacadc61547548fe4715c3edde7d03eed2900b467952"
+source = "git+https://github.com/rust-nostr/nostr?rev=ec3e9b299bf54f9610eefac49a3b5e62b17cec57#ec3e9b299bf54f9610eefac49a3b5e62b17cec57"
 dependencies = [
- "aes 0.8.3",
  "base64 0.21.3",
- "bech32",
  "bip39",
  "bitcoin",
- "bitcoin_hashes 0.12.0",
  "cbc",
+ "chacha20 0.9.1",
  "getrandom 0.2.10",
  "instant",
- "reqwest",
- "secp256k1",
+ "once_cell",
  "serde",
  "serde_json",
  "tracing",
- "url",
+ "url-fork",
 ]
 
 [[package]]
 name = "nostr-sdk"
 version = "0.23.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d97f949e4e303d07e8cb92dff5896da922b906133c8b75b570fd3ec93b782430"
+source = "git+https://github.com/rust-nostr/nostr?rev=ec3e9b299bf54f9610eefac49a3b5e62b17cec57#ec3e9b299bf54f9610eefac49a3b5e62b17cec57"
 dependencies = [
  "async-utility",
  "nostr",
  "nostr-sdk-net",
+ "once_cell",
  "thiserror",
  "tokio",
  "tracing",
@@ -1751,8 +1744,7 @@ dependencies = [
 [[package]]
 name = "nostr-sdk-net"
 version = "0.23.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "626d104f310b7360f904945f82339135529686b936abd89e220aaa2bc9704746"
+source = "git+https://github.com/rust-nostr/nostr?rev=ec3e9b299bf54f9610eefac49a3b5e62b17cec57#ec3e9b299bf54f9610eefac49a3b5e62b17cec57"
 dependencies = [
  "futures-util",
  "thiserror",
@@ -1760,7 +1752,7 @@ dependencies = [
  "tokio-rustls",
  "tokio-socks",
  "tokio-tungstenite",
- "url",
+ "url-fork",
  "webpki-roots 0.25.2",
  "ws_stream_wasm",
 ]
@@ -2233,7 +2225,6 @@ dependencies = [
  "http",
  "http-body",
  "hyper",
- "hyper-rustls",
  "hyper-tls",
  "ipnet",
  "js-sys",
@@ -2243,21 +2234,17 @@ dependencies = [
  "once_cell",
  "percent-encoding",
  "pin-project-lite",
- "rustls",
- "rustls-pemfile",
  "serde",
  "serde_json",
  "serde_urlencoded",
  "tokio",
  "tokio-native-tls",
- "tokio-rustls",
  "tokio-socks",
  "tower-service",
  "url",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
- "webpki-roots 0.25.2",
  "winreg",
 ]
 
@@ -2448,15 +2435,6 @@ dependencies = [
  "ring",
  "rustls-webpki 0.101.4",
  "sct",
-]
-
-[[package]]
-name = "rustls-pemfile"
-version = "1.0.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2d3987094b1d07b653b7dfdc3f70ce9a1da9c51ac18c1b06b662e4f9a0e9f4b2"
-dependencies = [
- "base64 0.21.3",
 ]
 
 [[package]]
@@ -3121,6 +3099,19 @@ dependencies = [
  "idna",
  "percent-encoding",
  "serde",
+]
+
+[[package]]
+name = "url-fork"
+version = "3.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "956afc9d7e101f0b718a6776489cd7998d0b17fc79f4cdb6ee6761fb72d1c2ce"
+dependencies = [
+ "form_urlencoded",
+ "percent-encoding",
+ "serde",
+ "unicode-bidi",
+ "unicode-normalization",
 ]
 
 [[package]]
