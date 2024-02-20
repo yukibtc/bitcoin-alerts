@@ -116,7 +116,9 @@ impl fmt::Debug for Nostr {
         write!(
             f,
             "{{ enabled: {}, relays: {:?}, pow_difficulty: {} }}",
-            self.enabled, self.relays, self.pow_difficulty
+            self.enabled,
+            self.relays.iter().map(|u| u.as_str()).collect::<Vec<_>>(),
+            self.pow_difficulty
         )
     }
 }
