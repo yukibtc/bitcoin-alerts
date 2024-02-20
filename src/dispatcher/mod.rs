@@ -3,13 +3,11 @@
 
 use std::thread;
 
-use anyhow::Result;
+use nostr_sdk::Result;
 
-mod matrix;
 mod nostr;
 mod ntfy;
 
-use self::matrix::Matrix;
 use self::nostr::Nostr;
 use self::ntfy::Ntfy;
 
@@ -25,10 +23,6 @@ impl Dispatcher {
 
         if CONFIG.nostr.enabled {
             Nostr::run().await?;
-        }
-
-        if CONFIG.matrix.enabled {
-            Matrix::run().await?;
         }
 
         Ok(())

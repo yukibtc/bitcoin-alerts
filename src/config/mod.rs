@@ -8,8 +8,7 @@ use std::str::FromStr;
 use bitcoin::network::constants::Network;
 use clap::Parser;
 use dirs::home_dir;
-use nostr_sdk::nostr::key::{FromSkStr, Keys};
-use nostr_sdk::nostr::Url;
+use nostr_sdk::{Keys, Url};
 use ntfy::Auth;
 use tracing::Level;
 
@@ -88,9 +87,6 @@ impl Config {
             None => Level::INFO,
         };
 
-        let keys: Keys =
-            Keys::from_sk_str(&config_file.nostr.secret_key).expect("Invalid secret key");
-
         let ntfy_auth: Option<Auth> = if let Some(username) = config_file.ntfy.username {
             config_file
                 .ntfy
@@ -127,7 +123,7 @@ impl Config {
             },
             nostr: Nostr {
                 enabled: config_file.nostr.enabled.unwrap_or(false),
-                keys,
+                keys: Keys::new(config_file.nostr.secret_key),
                 name: config_file.nostr.name.unwrap_or_else(|| String::from("bitcoin_alerts")),
                 display_name: config_file.nostr.display_name.unwrap_or_else(|| String::from("Bitcoin Alerts")),
                 description: config_file.nostr.description.unwrap_or_else(|| String::from("Hashrate, supply, blocks until halving, difficulty adjustment and more.\n\nBuilt with https://crates.io/crates/nostr-sdk 🦀")),

@@ -3,7 +3,7 @@
 
 use std::time::Duration;
 
-use anyhow::Result;
+use nostr_sdk::Result;
 use ntfy::{Dispatcher, Payload};
 
 use crate::primitives::Target;

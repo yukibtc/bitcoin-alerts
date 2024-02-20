@@ -30,7 +30,7 @@ const BLOCK_ALERTS: &[u64] = &[
 
 #[derive(Debug)]
 pub enum Error {
-    Db(bpns_rocksdb::Error),
+    Db(crate::db::rocks::Error),
     Rpc(bitcoin_rpc::Error),
 }
 
@@ -302,8 +302,8 @@ impl Drop for Processor {
     }
 }
 
-impl From<bpns_rocksdb::Error> for Error {
-    fn from(err: bpns_rocksdb::Error) -> Self {
+impl From<crate::db::rocks::Error> for Error {
+    fn from(err: crate::db::rocks::Error) -> Self {
         Error::Db(err)
     }
 }

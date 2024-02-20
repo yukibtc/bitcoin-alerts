@@ -4,8 +4,7 @@
 use std::path::Path;
 use std::sync::Arc;
 
-use bpns_rocksdb::{BoundColumnFamily, Error, Store};
-
+use crate::db::rocks::{BoundColumnFamily, Error, Store};
 use crate::util;
 
 pub struct BitcoinStore {

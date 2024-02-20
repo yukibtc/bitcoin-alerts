@@ -6,10 +6,11 @@ use std::time::Duration;
 
 #[macro_use]
 extern crate lazy_static;
+
 #[macro_use]
 extern crate serde;
 
-use anyhow::Result;
+use nostr_sdk::Result;
 
 mod bitcoin;
 mod config;

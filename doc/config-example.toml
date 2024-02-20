@@ -65,22 +65,3 @@ rpc_password = "yourpassword"
 
 # POW difficulty (default: 0)
 # pow_difficulty = 0
-
-[matrix]
-# Enable Matrix notifications (default: false)
-# enabled = false
-
-# Your local, onion or clearnet homeserver url
-# homeserver_url = "http://localhost:8008"      
-
-# Matrix Bot user_id
-# user_id = "@username:example.com"         
-
-# Matrix Bot password
-# password = "yourpassword"         
-
-# Needed if you want use onion homeserver url (default: None)
-# proxy = "socks5h://127.0.0.1:9050"
-
-# Allowed users to interact with bot
-# admins = ["@admin:example.com", "@admin2:example.com"]

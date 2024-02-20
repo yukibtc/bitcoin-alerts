@@ -1,7 +1,6 @@
 mod bitcoin;
-mod matrix;
 mod notification;
+pub mod rocks;
 
 pub use self::bitcoin::BitcoinStore;
-pub use self::matrix::{MatrixStore, Session};
-pub use self::notification::{Notification, NotificationStore};
+pub use self::notification::NotificationStore;

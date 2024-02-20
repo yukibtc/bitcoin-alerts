@@ -6,8 +6,7 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 
 use bitcoin::network::constants::Network;
-use nostr_sdk::nostr::Keys;
-use nostr_sdk::nostr::Url;
+use nostr_sdk::{Keys, SecretKey, Url};
 use ntfy::Auth;
 use tracing::Level;
 
@@ -53,20 +52,20 @@ pub struct Nostr {
     pub description: String,
     pub picture: Url,
     pub lud16: String,
-    pub relays: Vec<String>,
+    pub relays: Vec<Url>,
     pub pow_difficulty: u8,
 }
 
 #[derive(Deserialize)]
 pub struct ConfigFileNostr {
     pub enabled: Option<bool>,
-    pub secret_key: String,
+    pub secret_key: SecretKey,
     pub name: Option<String>,
     pub display_name: Option<String>,
     pub description: Option<String>,
     pub picture: Option<Url>,
     pub lud16: Option<String>,
-    pub relays: Vec<String>,
+    pub relays: Vec<Url>,
     pub pow_difficulty: Option<u8>,
 }
 

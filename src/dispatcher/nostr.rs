@@ -4,9 +4,8 @@
 use std::thread;
 use std::time::Duration;
 
-use anyhow::Result;
 use nostr_sdk::nostr::Metadata;
-use nostr_sdk::{Client, Options};
+use nostr_sdk::{Client, Options, Result};
 
 use crate::primitives::Target;
 use crate::{CONFIG, NOTIFICATION_STORE};
@@ -16,14 +15,11 @@ pub struct Nostr;
 impl Nostr {
     pub async fn run() -> Result<()> {
         let opts = Options::new()
-            .wait_for_connection(true)
+            .connection_timeout(Some(Duration::from_secs(10)))
             .difficulty(CONFIG.nostr.pow_difficulty);
         let client: Client = Client::with_opts(&CONFIG.nostr.keys, opts);
 
-        for url in CONFIG.nostr.relays.iter() {
-            client.add_relay(url.as_str(), None).await?;
-        }
-
+        client.add_relays(CONFIG.nostr.relays.clone()).await?;
         client.connect().await;
 
         let metadata = Metadata::new()
@@ -33,7 +29,7 @@ impl Nostr {
             .picture(CONFIG.nostr.picture.clone())
             .lud16(&CONFIG.nostr.lud16);
 
-        if let Err(err) = client.set_metadata(metadata).await {
+        if let Err(err) = client.set_metadata(&metadata).await {
             tracing::error!("Impossible to update profile metadata: {}", err);
         }
 
@@ -58,10 +54,7 @@ impl Nostr {
 
                 if !notifications.is_empty() {
                     for (id, notification) in notifications.into_iter() {
-                        match client
-                            .publish_text_note(&notification.plain_text, &[])
-                            .await
-                        {
+                        match client.publish_text_note(&notification.plain_text, []).await {
                             Ok(_) => {
                                 tracing::info!("Sent notification: {}", notification.plain_text);
 

@@ -5,8 +5,7 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
 
-use bpns_rocksdb::{BoundColumnFamily, Error, Store};
-
+use crate::db::rocks::{BoundColumnFamily, Error, Store};
 use crate::primitives::Target;
 use crate::util;
 
