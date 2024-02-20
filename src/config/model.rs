@@ -69,27 +69,6 @@ pub struct ConfigFileNostr {
     pub pow_difficulty: Option<u8>,
 }
 
-pub struct Matrix {
-    pub enabled: bool,
-    pub homeserver_url: String,
-    pub proxy: Option<String>,
-    pub user_id: String,
-    pub password: String,
-    pub admins: Vec<String>,
-    pub db_path: PathBuf,
-    pub state_path: PathBuf,
-}
-
-#[derive(Deserialize)]
-pub struct ConfigFileMatrix {
-    pub enabled: Option<bool>,
-    pub homeserver_url: Option<String>,
-    pub proxy: Option<String>,
-    pub user_id: Option<String>,
-    pub password: Option<String>,
-    pub admins: Option<Vec<String>>,
-}
-
 #[derive(Debug)]
 pub struct Config {
     pub main_path: PathBuf,
@@ -97,7 +76,6 @@ pub struct Config {
     pub bitcoin: Bitcoin,
     pub ntfy: Ntfy,
     pub nostr: Nostr,
-    pub matrix: Matrix,
 }
 
 #[derive(Deserialize)]
@@ -107,7 +85,6 @@ pub struct ConfigFile {
     pub bitcoin: ConfigFileBitcoin,
     pub ntfy: ConfigFileNtfy,
     pub nostr: ConfigFileNostr,
-    pub matrix: ConfigFileMatrix,
 }
 
 impl fmt::Debug for Bitcoin {
@@ -140,16 +117,6 @@ impl fmt::Debug for Nostr {
             f,
             "{{ enabled: {}, relays: {:?}, pow_difficulty: {} }}",
             self.enabled, self.relays, self.pow_difficulty
-        )
-    }
-}
-
-impl fmt::Debug for Matrix {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{{ enabled: {}, homeserver_url: {}, proxy: {:?}, user_id: {}, admins: {:?} }}",
-            self.enabled, self.homeserver_url, self.proxy, self.user_id, self.admins
         )
     }
 }

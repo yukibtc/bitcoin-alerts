@@ -15,7 +15,7 @@ use tracing::Level;
 pub mod model;
 
 pub use self::model::Config;
-use self::model::{Bitcoin, ConfigFile, Matrix, Nostr, Ntfy};
+use self::model::{Bitcoin, ConfigFile, Nostr, Ntfy};
 
 fn default_dir() -> PathBuf {
     let home: PathBuf = home_dir().unwrap_or_else(|| {
@@ -131,16 +131,6 @@ impl Config {
                 lud16: config_file.nostr.lud16.unwrap_or_else(|| String::from("yuki@getalby.com")),
                 relays: config_file.nostr.relays,
                 pow_difficulty: config_file.nostr.pow_difficulty.unwrap_or(0),
-            },
-            matrix: Matrix {
-                enabled: config_file.matrix.enabled.unwrap_or(false),
-                homeserver_url: config_file.matrix.homeserver_url.unwrap_or_default(),
-                proxy: config_file.matrix.proxy,
-                user_id: config_file.matrix.user_id.unwrap_or_default(),
-                password: config_file.matrix.password.unwrap_or_default(),
-                admins: config_file.matrix.admins.unwrap_or_default(),
-                db_path: main_path.join("matrix/db"),
-                state_path: main_path.join("matrix/state"),
             },
         };
 
