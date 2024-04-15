@@ -116,22 +116,36 @@ impl Processor {
 
     fn halving(block_height: u64) -> Result<(), Error> {
         if block_height % 210_000 == 0 {
-            let current_block_reward: f64 = 50.0 / f64::powf(2.0, (block_height / 210_000) as f64);
+            let epoch: u64 = block_height / 210_000;
 
-            let plain_text: String = format!(
-                "🎉 The Halving has arrived ({}/32) 🎉",
-                block_height / 210_000
-            );
-            Self::queue_notification(plain_text.clone(), plain_text)?;
+            if epoch <= 32 {
+                // Calc block reward
+                let block_reward: f64 = 50.0 / f64::powf(2.0, (block_height / 210_000) as f64);
 
-            let plain_text: String =
-                format!("New block reward: {} BTC", current_block_reward / 2.0);
-            Self::queue_notification(plain_text.clone(), plain_text)?;
+                // Send halving notification
+                let epoch: u64 = block_height / 210_000;
+                let plain_text: String = format!(
+                    "⛏️ The Halving is here! Welcome to the {epoch}{} epoch! ⛏️",
+                    match epoch {
+                        1 | 21 | 31 => "st",
+                        2 | 22 | 32 => "nd",
+                        3 | 23 => "rd",
+                        _ => "th",
+                    }
+                );
+                Self::queue_notification(plain_text)?;
+
+                // Send block reward notification
+                let plain_text: String = format!("⛏️ New block reward: {block_reward:.2} BTC ⛏️");
+                Self::queue_notification(plain_text)?;
+            } else {
+                tracing::warn!("Epoch > 32 ({epoch})");
+            }
         } else {
             let missing_blocks: u64 = (block_height / 210_000 + 1) * 210_000 - block_height;
 
             if missing_blocks <= 144 * 7 // Less that a week left, notify every block
-                || (missing_blocks <= 4320 && missing_blocks % 6 == 0) // Less than 1 months left, notify every hour
+                || (missing_blocks <= 4320 && missing_blocks % 6 == 0) // Less than 1 month left, notify every hour
                 || missing_blocks == 4320 // One month left
                 || (missing_blocks <= 8640 && missing_blocks % 144 == 0) // Less than 2 months left, notify every day
                 || missing_blocks == 8640 // 2 months left
@@ -148,7 +162,7 @@ impl Processor {
                     util::format_number(missing_blocks as usize)
                 );
 
-                Self::queue_notification(plain_text.clone(), plain_text)?;
+                Self::queue_notification(plain_text)?;
             }
         }
 
@@ -171,7 +185,7 @@ impl Processor {
 
             let plain_text: String = format!("⛏️ Difficulty adj: {difficulty:.2}T ({change:.2}%) ⛏️");
 
-            Self::queue_notification(plain_text.clone(), plain_text)?;
+            Self::queue_notification(plain_text)?;
             BITCOIN_STORE.set_last_difficculty(difficulty)?;
         }
 
@@ -211,7 +225,7 @@ impl Processor {
                         util::format_number(*supply_alert as usize)
                     );
 
-                    Self::queue_notification(plain_text.clone(), plain_text)?;
+                    Self::queue_notification(plain_text)?;
                 }
             }
         }
@@ -232,8 +246,7 @@ impl Processor {
 
         if current_hashrate > last_hashrate_ath {
             let plain_text: String = format!("🎉  New hashrate ATH: {current_hashrate:.2} EH/s 🎉");
-
-            Self::queue_notification(plain_text.clone(), plain_text)?;
+            Self::queue_notification(plain_text)?;
             BITCOIN_STORE.set_last_hashrate_ath(current_hashrate)?;
         }
 
@@ -246,7 +259,7 @@ impl Processor {
                 "⛓️ Reached block {} ⛓️",
                 util::format_number(block_height as usize)
             );
-            Self::queue_notification(plain_text.clone(), plain_text)?;
+            Self::queue_notification(plain_text)?;
         }
 
         if CONFIG.bitcoin.network == Network::Regtest {
@@ -254,19 +267,24 @@ impl Processor {
                 "⛓️ Reached block {} ⛓️",
                 util::format_number(block_height as usize)
             );
-            Self::queue_notification(plain_text.clone(), plain_text)?;
+            Self::queue_notification(plain_text)?;
         }
 
         Ok(())
     }
 
-    fn queue_notification(plain_text: String, html: String) -> Result<(), Error> {
+    fn queue_notification<S>(plain_text: S) -> Result<(), Error>
+    where
+        S: AsRef<str>,
+    {
+        let plain_text: &str = plain_text.as_ref();
+
         if CONFIG.ntfy.enabled {
-            Self::queue_notification_with_target(Target::Ntfy, plain_text.clone(), html.clone())?;
+            Self::queue_notification_with_target(Target::Ntfy, plain_text, plain_text)?;
         }
 
         if CONFIG.nostr.enabled {
-            Self::queue_notification_with_target(Target::Nostr, plain_text.clone(), html.clone())?;
+            Self::queue_notification_with_target(Target::Nostr, plain_text, plain_text)?;
         }
 
         Ok(())
@@ -274,14 +292,10 @@ impl Processor {
 
     fn queue_notification_with_target(
         target: Target,
-        plain_text: String,
-        html: String,
+        plain_text: &str,
+        html: &str,
     ) -> Result<(), Error> {
-        match NOTIFICATION_STORE.create_notification(
-            target.clone(),
-            plain_text.as_str(),
-            html.as_str(),
-        ) {
+        match NOTIFICATION_STORE.create_notification(target, plain_text, html) {
             Ok(_) => tracing::info!("Queued a new notification for {}", target),
             Err(err) => {
                 tracing::error!("Impossible to queue notification for {}: {:?}", target, err)

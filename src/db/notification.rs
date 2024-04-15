@@ -44,8 +44,8 @@ impl NotificationStore {
         let key: &str = &util::sha512(format!("{target}:{plain_text}:{html}"))[..32];
         let value: Notification = Notification {
             target,
-            plain_text: plain_text.into(),
-            html: html.into(),
+            plain_text: plain_text.to_string(),
+            html: html.to_string(),
         };
 
         self.db.put_serialized(self.notification_cf(), key, &value)
