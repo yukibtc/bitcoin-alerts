@@ -2,7 +2,7 @@
 name = "bitcoin-alerts"
 version = "0.1.0"
 edition = "2021"
-authors = ["Yuki Kishimoto <yukikishimoto@proton.me>"]
+authors = ["Yuki Kishimoto <yukikishimoto@protonmail.com>"]
 homepage = "https://github.com/yukibtc/bitcoin-alerts"
 repository = "https://github.com/yukibtc/bitcoin-alerts.git"
 license = "MIT"
@@ -11,12 +11,12 @@ rust-version = "1.64"
 keywords = ["bitcoin", "alerts", "notifications"]
 
 [dependencies]
-bitcoin = "0.30"
-bitcoin-rpc = { git = "https://github.com/yukibtc/bitcoin-rpc", rev = "49b264519742a44207ada56d8e1883f1e15ae347" }
+bitcoin = "0.31"
+bitcoin-rpc = { git = "https://github.com/yukibtc/bitcoin-rpc", rev = "10a6c31fc189d6bd7ed79cad347b814e19853935" }
 clap = { version = "4.4", features = ["derive"] }
 dirs = "5.0"
 lazy_static = "1.4"
-nostr-sdk = { version = "0.28", default-features = false }
+nostr-sdk = { version = "0.30", default-features = false }
 ntfy = "0.3"
 num_cpus = "1.16"
 rocksdb = { version = "0.21", default-features = false, features = ["multi-threaded-cf", "zstd"] }

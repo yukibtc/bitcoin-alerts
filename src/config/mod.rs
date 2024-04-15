@@ -5,7 +5,7 @@ use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
-use bitcoin::network::constants::Network;
+use bitcoin::network::Network;
 use clap::Parser;
 use dirs::home_dir;
 use nostr_sdk::{Keys, Url};

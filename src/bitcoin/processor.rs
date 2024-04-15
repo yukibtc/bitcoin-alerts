@@ -5,7 +5,7 @@ use std::convert::From;
 use std::thread;
 use std::time::{Duration, Instant};
 
-use bitcoin::network::constants::Network;
+use bitcoin::network::Network;
 use bitcoin_rpc::{MiningInfo, TxOutSetInfo};
 
 use crate::bitcoin::RPC;

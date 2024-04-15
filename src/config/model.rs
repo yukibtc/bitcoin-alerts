@@ -5,7 +5,7 @@ use std::fmt;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 
-use bitcoin::network::constants::Network;
+use bitcoin::network::Network;
 use nostr_sdk::{Keys, SecretKey, Url};
 use ntfy::Auth;
 use tracing::Level;
