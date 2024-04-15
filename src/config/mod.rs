@@ -128,6 +128,7 @@ impl Config {
                 display_name: config_file.nostr.display_name.unwrap_or_else(|| String::from("Bitcoin Alerts")),
                 description: config_file.nostr.description.unwrap_or_else(|| String::from("Hashrate, supply, blocks until halving, difficulty adjustment and more.\n\nBuilt with https://crates.io/crates/nostr-sdk 🦀")),
                 picture: config_file.nostr.picture.unwrap_or_else(|| Url::parse("https://avatars.githubusercontent.com/u/13464320").expect("Invalid url")),
+                nip05: config_file.nostr.nip05,
                 lud16: config_file.nostr.lud16.unwrap_or_else(|| String::from("yuki@getalby.com")),
                 relays: config_file.nostr.relays,
                 pow_difficulty: config_file.nostr.pow_difficulty.unwrap_or(0),

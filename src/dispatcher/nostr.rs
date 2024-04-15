@@ -22,12 +22,16 @@ impl Nostr {
         client.add_relays(CONFIG.nostr.relays.clone()).await?;
         client.connect().await;
 
-        let metadata = Metadata::new()
+        let mut metadata = Metadata::new()
             .name(&CONFIG.nostr.name)
             .display_name(&CONFIG.nostr.display_name)
             .about(&CONFIG.nostr.description)
             .picture(CONFIG.nostr.picture.clone())
             .lud16(&CONFIG.nostr.lud16);
+
+        if let Some(nip05) = &CONFIG.nostr.nip05 {
+            metadata = metadata.nip05(nip05);
+        }
 
         if let Err(err) = client.set_metadata(&metadata).await {
             tracing::error!("Impossible to update profile metadata: {}", err);

@@ -57,6 +57,9 @@ rpc_password = "yourpassword"
 # Picture
 # picture = "https://avatars.githubusercontent.com/u/13464320"
 
+# NIP05
+# nip05 = "bitcoin_alerts@example.com"
+
 # LUD16 (Lightning Address)
 # lud16 = "yuki@getalby.com"
 
