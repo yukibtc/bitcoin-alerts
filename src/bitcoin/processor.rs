@@ -116,20 +116,22 @@ impl Processor {
 
     fn halving(block_height: u64) -> Result<(), Error> {
         if block_height % 210_000 == 0 {
-            let epoch: u64 = block_height / 210_000;
+            let halving: u64 = block_height / 210_000;
 
-            if epoch <= 32 {
+            if halving <= 32 {
                 // Calc block reward
                 let block_reward: f64 = 50.0 / f64::powf(2.0, (block_height / 210_000) as f64);
 
+                // Calc epoch
+                let epoch: u64 = halving + 1;
+
                 // Send halving notification
-                let epoch: u64 = block_height / 210_000;
                 let plain_text: String = format!(
                     "⛏️ The Halving is here! Welcome to the {epoch}{} epoch! ⛏️",
                     match epoch {
                         1 | 21 | 31 => "st",
                         2 | 22 | 32 => "nd",
-                        3 | 23 => "rd",
+                        3 | 23 | 33 => "rd",
                         _ => "th",
                     }
                 );
@@ -139,7 +141,7 @@ impl Processor {
                 let plain_text: String = format!("⛏️ New block reward: {block_reward:.2} BTC ⛏️");
                 Self::queue_notification(plain_text)?;
             } else {
-                tracing::warn!("Epoch > 32 ({epoch})");
+                tracing::warn!("Halving > 32 ({halving})");
             }
         } else {
             let missing_blocks: u64 = (block_height / 210_000 + 1) * 210_000 - block_height;
