@@ -38,6 +38,6 @@ async fn main() -> Result<()> {
     Dispatcher::run().await?;
 
     loop {
-        thread::sleep(Duration::from_secs(60));
+        tokio::time::sleep(Duration::from_secs(60)).await;
     }
 }

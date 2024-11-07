@@ -51,69 +51,67 @@ pub struct Processor;
 
 impl Processor {
     pub fn run() {
-        thread::spawn({
-            tracing::info!("Bitcoin Block Processor started");
+        tracing::info!("Bitcoin Block Processor started");
 
-            let mut delay = 30; // Delay seconds
+        let mut delay = 30; // Delay seconds
 
-            move || loop {
-                let block_height: u64 = match RPC.get_block_count() {
-                    Ok(n) => {
-                        tracing::debug!("Current block is {}", n);
-                        n
-                    }
-                    Err(err) => {
-                        tracing::error!("Get block height: {:?}", err);
-                        thread::sleep(Duration::from_secs(60));
-                        continue;
-                    }
-                };
-
-                let last_processed_block: u64 = match BITCOIN_STORE.get_last_processed_block() {
-                    Ok(value) => value,
-                    Err(_) => {
-                        let _ = BITCOIN_STORE.set_last_processed_block(block_height);
-                        block_height
-                    }
-                };
-
-                tracing::debug!("Last processed block is {}", last_processed_block);
-
-                if block_height <= last_processed_block {
-                    tracing::debug!("Wait for new block");
+        loop {
+            let block_height: u64 = match RPC.get_block_count() {
+                Ok(n) => {
+                    tracing::debug!("Current block is {}", n);
+                    n
+                }
+                Err(err) => {
+                    tracing::error!("Get block height: {:?}", err);
                     thread::sleep(Duration::from_secs(60));
                     continue;
                 }
+            };
 
-                let next_block_to_process: u64 = last_processed_block + 1;
-                let start = Instant::now();
-                match Self::process_block(next_block_to_process) {
-                    Ok(_) => {
-                        delay = 30;
+            let last_processed_block: u64 = match BITCOIN_STORE.get_last_processed_block() {
+                Ok(value) => value,
+                Err(_) => {
+                    let _ = BITCOIN_STORE.set_last_processed_block(block_height);
+                    block_height
+                }
+            };
 
-                        let elapsed_time = start.elapsed().as_millis();
-                        tracing::trace!(
-                            "Block {} processed in {} ms",
-                            next_block_to_process,
-                            elapsed_time
-                        );
-                        let _ = BITCOIN_STORE.set_last_processed_block(next_block_to_process);
-                    }
-                    Err(err) => {
-                        if delay > 3600 {
-                            tracing::error!("Impossible to process block: {:?}", err);
-                            std::process::exit(0x1);
-                        }
+            tracing::debug!("Last processed block is {}", last_processed_block);
 
-                        tracing::error!("Process block: {:?} - retrying in {} sec", err, delay);
-
-                        thread::sleep(Duration::from_secs(delay));
-
-                        delay *= 2;
-                    }
-                };
+            if block_height <= last_processed_block {
+                tracing::debug!("Wait for new block");
+                thread::sleep(Duration::from_secs(60));
+                continue;
             }
-        });
+
+            let next_block_to_process: u64 = last_processed_block + 1;
+            let start = Instant::now();
+            match Self::process_block(next_block_to_process) {
+                Ok(_) => {
+                    delay = 30;
+
+                    let elapsed_time = start.elapsed().as_millis();
+                    tracing::trace!(
+                        "Block {} processed in {} ms",
+                        next_block_to_process,
+                        elapsed_time
+                    );
+                    let _ = BITCOIN_STORE.set_last_processed_block(next_block_to_process);
+                }
+                Err(err) => {
+                    if delay > 3600 {
+                        tracing::error!("Impossible to process block: {:?}", err);
+                        std::process::exit(0x1);
+                    }
+
+                    tracing::error!("Process block: {:?} - retrying in {} sec", err, delay);
+
+                    thread::sleep(Duration::from_secs(delay));
+
+                    delay *= 2;
+                }
+            };
+        }
     }
 
     fn process_block(block_height: u64) -> Result<(), Error> {
