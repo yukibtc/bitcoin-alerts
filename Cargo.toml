@@ -7,7 +7,7 @@ homepage = "https://github.com/yukibtc/bitcoin-alerts"
 repository = "https://github.com/yukibtc/bitcoin-alerts.git"
 license = "MIT"
 readme = "README.md"
-rust-version = "1.64"
+rust-version = "1.80.0"
 keywords = ["bitcoin", "alerts", "notifications"]
 
 [dependencies]
@@ -15,7 +15,6 @@ bitcoin = "0.32"
 bitcoin-rpc = { git = "https://github.com/yukibtc/bitcoin-rpc", rev = "10a6c31fc189d6bd7ed79cad347b814e19853935" }
 clap = { version = "4.4", features = ["derive"] }
 dirs = "5.0"
-lazy_static = "1.4"
 nostr-sdk = { version = "0.30", default-features = false }
 ntfy = "0.3"
 num_cpus = "1.16"

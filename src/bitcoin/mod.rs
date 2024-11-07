@@ -1,6 +1,7 @@
 // Copyright (c) 2021-2024 Yuki Kishimoto
 // Distributed under the MIT software license
 
+use std::sync::LazyLock;
 use std::thread;
 use std::time::Duration;
 
@@ -11,13 +12,13 @@ mod processor;
 use self::processor::Processor;
 use crate::CONFIG;
 
-lazy_static! {
-    pub static ref RPC: Client = Client::new(
+static RPC: LazyLock<Client> = LazyLock::new(|| {
+    Client::new(
         &format!("http://{}", CONFIG.bitcoin.rpc_addr),
         &CONFIG.bitcoin.rpc_username,
-        &CONFIG.bitcoin.rpc_password
-    );
-}
+        &CONFIG.bitcoin.rpc_password,
+    )
+});
 
 pub struct Bitcoin;
 

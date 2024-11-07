@@ -1,11 +1,9 @@
 // Copyright (c) 2021-2024 Yuki Kishimoto
 // Distributed under the MIT software license
 
+use std::sync::LazyLock;
 use std::thread;
 use std::time::Duration;
-
-#[macro_use]
-extern crate lazy_static;
 
 #[macro_use]
 extern crate serde;
@@ -25,13 +23,11 @@ use self::config::Config;
 use self::db::{BitcoinStore, NotificationStore};
 use self::dispatcher::Dispatcher;
 
-lazy_static! {
-    pub static ref CONFIG: Config = Config::from_args();
-    pub static ref BITCOIN_STORE: BitcoinStore =
-        BitcoinStore::open(&CONFIG.bitcoin.db_path).unwrap();
-    pub static ref NOTIFICATION_STORE: NotificationStore =
-        NotificationStore::open(&CONFIG.main_path.join("notification")).unwrap();
-}
+static CONFIG: LazyLock<Config> = LazyLock::new(Config::from_args);
+static BITCOIN_STORE: LazyLock<BitcoinStore> =
+    LazyLock::new(|| BitcoinStore::open(&CONFIG.bitcoin.db_path).unwrap());
+static NOTIFICATION_STORE: LazyLock<NotificationStore> =
+    LazyLock::new(|| NotificationStore::open(&CONFIG.main_path.join("notification")).unwrap());
 
 #[tokio::main]
 async fn main() -> Result<()> {
