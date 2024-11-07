@@ -43,7 +43,6 @@ fn default_opts() -> rocksdb::Options {
     opts.set_write_buffer_size(256 << 20);
     opts.set_enable_write_thread_adaptive_yield(true);
     opts.set_disable_auto_compactions(true); // for initial bulk load
-    opts.increase_parallelism(num_cpus::get() as i32); // Use all CPUs to flush and compact db
     opts
 }
 
