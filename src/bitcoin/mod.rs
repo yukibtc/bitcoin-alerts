@@ -5,7 +5,7 @@ use std::sync::LazyLock;
 use std::thread;
 use std::time::Duration;
 
-use bitcoin_rpc::{BlockchainInfo, Client, NetworkInfo};
+use bitcoincore_rpc::{Auth, Client, RpcApi};
 
 mod processor;
 
@@ -15,9 +15,12 @@ use crate::CONFIG;
 static RPC: LazyLock<Client> = LazyLock::new(|| {
     Client::new(
         &format!("http://{}", CONFIG.bitcoin.rpc_addr),
-        &CONFIG.bitcoin.rpc_username,
-        &CONFIG.bitcoin.rpc_password,
+        Auth::UserPass(
+            CONFIG.bitcoin.rpc_username.clone(),
+            CONFIG.bitcoin.rpc_password.clone(),
+        ),
     )
+    .unwrap()
 });
 
 pub struct Bitcoin;
@@ -27,7 +30,7 @@ impl Bitcoin {
         thread::spawn({
             move || {
                 loop {
-                    let blockchain_info: BlockchainInfo = match RPC.get_blockchain_info() {
+                    let blockchain_info = match RPC.get_blockchain_info() {
                         Ok(data) => data,
                         Err(error) => {
                             tracing::error!(
@@ -38,7 +41,7 @@ impl Bitcoin {
                             continue;
                         }
                     };
-                    let network_info: NetworkInfo = match RPC.get_network_info() {
+                    let network_info = match RPC.get_network_info() {
                         Ok(data) => data,
                         Err(error) => {
                             tracing::error!("Get network info: {:?} - retrying in 60 sec", error);

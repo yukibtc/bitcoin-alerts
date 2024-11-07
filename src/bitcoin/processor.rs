@@ -6,7 +6,8 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use bitcoin::network::Network;
-use bitcoin_rpc::{MiningInfo, TxOutSetInfo};
+use bitcoincore_rpc::json::GetMiningInfoResult;
+use bitcoincore_rpc::RpcApi;
 
 use crate::bitcoin::RPC;
 use crate::primitives::Target;
@@ -31,7 +32,7 @@ const BLOCK_ALERTS: &[u64] = &[
 #[derive(Debug)]
 pub enum Error {
     Db(crate::db::rocks::Error),
-    Rpc(bitcoin_rpc::Error),
+    Rpc(bitcoincore_rpc::Error),
 }
 
 impl From<crate::db::rocks::Error> for Error {
@@ -40,8 +41,8 @@ impl From<crate::db::rocks::Error> for Error {
     }
 }
 
-impl From<bitcoin_rpc::Error> for Error {
-    fn from(err: bitcoin_rpc::Error) -> Self {
+impl From<bitcoincore_rpc::Error> for Error {
+    fn from(err: bitcoincore_rpc::Error) -> Self {
         Error::Rpc(err)
     }
 }
@@ -116,7 +117,7 @@ impl Processor {
     }
 
     fn process_block(block_height: u64) -> Result<(), Error> {
-        let mining_info: MiningInfo = RPC.get_mining_info()?;
+        let mining_info = RPC.get_mining_info()?;
 
         Self::halving(block_height)?;
         Self::difficulty_adjustment(block_height, &mining_info)?;
@@ -183,7 +184,10 @@ impl Processor {
         Ok(())
     }
 
-    fn difficulty_adjustment(block_height: u64, mining_info: &MiningInfo) -> Result<(), Error> {
+    fn difficulty_adjustment(
+        block_height: u64,
+        mining_info: &GetMiningInfoResult,
+    ) -> Result<(), Error> {
         if block_height % 2016 == 0 {
             let difficulty: f64 = mining_info.difficulty / u64::pow(10, 12) as f64;
 
@@ -212,8 +216,8 @@ impl Processor {
         let current_reward: f64 = 50.0 / f64::powf(2.0, current_halving as f64);
 
         if block_height % 50_000 == 0 || BITCOIN_STORE.get_last_supply().is_err() {
-            let txoutset_info: TxOutSetInfo = RPC.get_tx_out_set_info()?;
-            let mut total_supply: f64 = txoutset_info.total_amount;
+            let txoutset_info = RPC.get_tx_out_set_info(None, None, None)?;
+            let mut total_supply: f64 = txoutset_info.total_amount.to_btc();
 
             tracing::debug!(
                 "txoutset_info.height: {} - block_height: {}",
@@ -248,7 +252,7 @@ impl Processor {
         Ok(())
     }
 
-    fn hashrate(mining_info: &MiningInfo) -> Result<(), Error> {
+    fn hashrate(mining_info: &GetMiningInfoResult) -> Result<(), Error> {
         let current_hashrate: f64 = mining_info.network_hash_ps / u64::pow(10, 18) as f64; // Hashrate in EH/s
 
         let last_hashrate_ath: f64 = match BITCOIN_STORE.get_last_hashrate_ath() {
