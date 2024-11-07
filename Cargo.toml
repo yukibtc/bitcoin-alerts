@@ -13,7 +13,7 @@ keywords = ["bitcoin", "alerts", "notifications"]
 [dependencies]
 bitcoin = "0.32"
 bitcoin-rpc = { git = "https://github.com/yukibtc/bitcoin-rpc", rev = "172da01c232c5745b82b68c2ab09dc358576f1a4" } # TODO: use bitcoincore-rpc instead
-clap = { version = "4.4", features = ["derive"] }
+clap = { version = "4.5", features = ["derive"] }
 dirs = "5.0"
 nostr-sdk = { version = "0.36", default-features = false }
 ntfy = "0.6"
