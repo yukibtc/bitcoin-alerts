@@ -2,7 +2,7 @@
 // Distributed under the MIT software license
 
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::str::FromStr;
 
 use bitcoin::network::Network;
@@ -42,18 +42,10 @@ impl Config {
     pub fn from_args() -> Self {
         let args: Args = Args::parse();
 
-        let config_file_path: PathBuf = match args.config_file {
-            Some(path) => path,
-            None => default_config_file(),
-        };
-
-        let config_file: ConfigFile = match Self::read_config_file(&config_file_path) {
-            Ok(data) => data,
-            Err(error) => {
-                tracing::error!("Impossible to read config file at {:?}", config_file_path);
-                panic!("{}", error);
-            }
-        };
+        // Read and parse config file
+        let config_file_path: PathBuf = args.config_file.unwrap_or_else(default_config_file);
+        let config_content = std::fs::read_to_string(config_file_path).unwrap();
+        let config_file: ConfigFile = toml::from_str(&config_content).unwrap();
 
         let network: Network = match config_file.bitcoin.network {
             Some(network_str) => match Network::from_str(network_str.as_str()) {
@@ -138,10 +130,5 @@ impl Config {
         println!("{config:?}");
 
         config
-    }
-
-    fn read_config_file(path: &Path) -> std::io::Result<ConfigFile> {
-        let content = std::fs::read_to_string(path)?;
-        Ok(toml::from_str(&content)?)
     }
 }
