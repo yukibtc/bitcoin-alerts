@@ -185,7 +185,8 @@ impl Processor {
 
             let change: f64 = (difficulty - last_difficulty) / last_difficulty * 100.0;
 
-            let plain_text: String = format!("⛏️ Difficulty adj: {difficulty:.2}T ({change:.2}%) ⛏️");
+            let plain_text: String =
+                format!("⛏️ Difficulty adj: {difficulty:.2}T ({change:.2}%) ⛏️");
 
             Self::queue_notification(plain_text)?;
             BITCOIN_STORE.set_last_difficculty(difficulty)?;

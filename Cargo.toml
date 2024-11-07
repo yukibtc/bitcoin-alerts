@@ -11,7 +11,7 @@ rust-version = "1.64"
 keywords = ["bitcoin", "alerts", "notifications"]
 
 [dependencies]
-bitcoin = "0.31"
+bitcoin = "0.32"
 bitcoin-rpc = { git = "https://github.com/yukibtc/bitcoin-rpc", rev = "10a6c31fc189d6bd7ed79cad347b814e19853935" }
 clap = { version = "4.4", features = ["derive"] }
 dirs = "5.0"
