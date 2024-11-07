@@ -6,7 +6,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 pub use rocksdb::{
-    BoundColumnFamily, ColumnFamilyDescriptor, DBCompactionStyle, DBCompressionType, WriteBatch,
+    BoundColumnFamily, ColumnFamilyDescriptor, DBCompactionStyle, DBCompressionType,
 };
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -14,7 +14,6 @@ use serde::Serialize;
 #[derive(Clone)]
 pub struct Store {
     db: Arc<rocksdb::DB>,
-    column_families: Vec<String>,
 }
 
 #[derive(Debug)]
@@ -26,8 +25,12 @@ pub enum Error {
     FailedToDeserialize,
     FailedToSerialize,
     ValueNotFound,
-    AlreadyExist,
-    InvalidValue,
+}
+
+impl From<rocksdb::Error> for Error {
+    fn from(err: rocksdb::Error) -> Self {
+        Error::RocksDb(err)
+    }
 }
 
 fn default_opts() -> rocksdb::Options {
@@ -68,10 +71,7 @@ impl Store {
             ),
             Err(_) => tracing::warn!("Impossible to get live files"),
         };
-        Ok(Self {
-            db: Arc::new(db),
-            column_families: column_families.iter().map(|c| c.to_string()).collect(),
-        })
+        Ok(Self { db: Arc::new(db) })
     }
 
     fn create_cf_descriptors(column_families: &[&str]) -> Vec<ColumnFamilyDescriptor> {
@@ -118,14 +118,6 @@ impl Store {
         }
     }
 
-    pub fn get_deserialized<K, V>(&self, cf: Arc<BoundColumnFamily>, key: K) -> Result<V, Error>
-    where
-        K: AsRef<[u8]>,
-        V: DeserializeOwned,
-    {
-        self.deserialize::<V>(self.get(cf, key)?)
-    }
-
     pub fn put<K, V>(&self, cf: Arc<BoundColumnFamily>, key: K, value: V) -> Result<(), Error>
     where
         K: AsRef<[u8]>,
@@ -133,7 +125,6 @@ impl Store {
     {
         match self.db.put_cf(&cf, key, value) {
             Ok(_) => Ok(()),
-
             Err(error) => {
                 tracing::error!("Impossible to put value in database: {}", error);
                 Err(Error::FailedToPut)
@@ -194,59 +185,7 @@ impl Store {
         }
         Ok(collection)
     }
-    pub fn iterator_serialized<K, V>(
-        &self,
-        cf: Arc<BoundColumnFamily>,
-    ) -> Result<HashMap<K, V>, Error>
-    where
-        K: DeserializeOwned + std::cmp::Eq + std::hash::Hash,
-        V: DeserializeOwned,
-    {
-        let mut collection = HashMap::new();
-        for (key_bytes, value_bytes) in self.iterator(cf.clone())?.iter() {
-            match self.deserialize::<K>(key_bytes.to_vec()) {
-                Ok(key) => {
-                    match self.deserialize::<V>(value_bytes.to_vec()) {
-                        Ok(value) => {
-                            collection.insert(key, value);
-                        }
-                        Err(error) => {
-                            tracing::error!("Failed to deserialize value: {:?}", error);
-                            let _ = self.delete(cf.clone(), key_bytes);
-                        }
-                    };
-                }
-                Err(error) => tracing::error!("Failed to deserialize key: {:?}", error),
-            };
-        }
-        Ok(collection)
-    }
-    pub fn iterator_key_serialized<T>(&self, cf: Arc<BoundColumnFamily>) -> Result<Vec<T>, Error>
-    where
-        T: DeserializeOwned,
-    {
-        let mut collection: Vec<T> = Vec::new();
-        for key in self.iterator(cf.clone())?.into_keys() {
-            match self.deserialize::<T>(key.to_vec()) {
-                Ok(key) => collection.push(key),
-                Err(error) => tracing::error!("Failed to deserialize key: {:?}", error),
-            };
-        }
-        Ok(collection)
-    }
-    pub fn iterator_value_serialized<T>(&self, cf: Arc<BoundColumnFamily>) -> Result<Vec<T>, Error>
-    where
-        T: DeserializeOwned,
-    {
-        let mut collection: Vec<T> = Vec::new();
-        for value in self.iterator(cf.clone())?.into_values() {
-            match self.deserialize::<T>(value.to_vec()) {
-                Ok(value) => collection.push(value),
-                Err(error) => tracing::error!("Failed to deserialize value: {:?}", error),
-            };
-        }
-        Ok(collection)
-    }
+
     pub fn delete<K>(&self, cf: Arc<BoundColumnFamily>, key: K) -> Result<(), Error>
     where
         K: AsRef<[u8]>,
@@ -257,87 +196,6 @@ impl Store {
                 tracing::error!("Impossible to delete key from database: {}", error);
                 Err(Error::FailedToDelete)
             }
-        }
-    }
-
-    pub fn write(&self, batch: WriteBatch) -> Result<(), Error> {
-        self.db.write(batch)?;
-        Ok(())
-    }
-    pub fn flush(&self) {
-        self.column_families.iter().for_each(|name| {
-            let cf = self
-                .db
-                .cf_handle(name.as_str())
-                .unwrap_or_else(|| panic!("missing {}_CF", name.to_uppercase()));
-            match self.db.flush_cf(&cf) {
-                Ok(_) => tracing::debug!("{} cf flushed", name),
-                Err(error) => tracing::error!("Impossible to flush {} cf: {}", name, error),
-            };
-        });
-        self.start_compactions();
-    }
-    fn start_compactions(&self) {
-        self.column_families.iter().for_each(|name| {
-            tracing::debug!("starting {} compaction", name);
-            let cf = self
-                .db
-                .cf_handle(name.as_str())
-                .unwrap_or_else(|| panic!("missing {}_CF", name.to_uppercase()));
-            self.db.compact_range_cf(&cf, None::<&[u8]>, None::<&[u8]>);
-        });
-        tracing::debug!("finished full compaction");
-        self.column_families.iter().for_each(|name| {
-            let cf = self
-                .db
-                .cf_handle(name.as_str())
-                .unwrap_or_else(|| panic!("missing {}_CF", name.to_uppercase()));
-            self.db
-                .set_options_cf(&cf, &[("disable_auto_compactions", "false")])
-                .expect("failed to start auto-compactions");
-        });
-        tracing::debug!("auto-compactions enabled");
-    }
-}
-impl Drop for Store {
-    fn drop(&mut self) {
-        tracing::trace!("Closing Database");
-    }
-}
-impl From<rocksdb::Error> for Error {
-    fn from(err: rocksdb::Error) -> Self {
-        Error::RocksDb(err)
-    }
-}
-pub trait WriteSerializedBatch {
-    fn put_serialized<K, V>(
-        &mut self,
-        cf: Arc<BoundColumnFamily>,
-        key: K,
-        value: &V,
-    ) -> Result<(), Error>
-    where
-        K: AsRef<[u8]>,
-        V: Serialize + std::fmt::Debug;
-}
-
-impl WriteSerializedBatch for WriteBatch {
-    fn put_serialized<K, V>(
-        &mut self,
-        cf: Arc<BoundColumnFamily>,
-        key: K,
-        value: &V,
-    ) -> Result<(), Error>
-    where
-        K: AsRef<[u8]>,
-        V: Serialize + std::fmt::Debug,
-    {
-        match serde_json::to_string(&value) {
-            Ok(serialized) => {
-                self.put_cf(&cf, key, serialized.into_bytes());
-                Ok(())
-            }
-            Err(_) => Err(Error::FailedToSerialize),
         }
     }
 }

@@ -34,6 +34,18 @@ pub enum Error {
     Rpc(bitcoin_rpc::Error),
 }
 
+impl From<crate::db::rocks::Error> for Error {
+    fn from(err: crate::db::rocks::Error) -> Self {
+        Error::Db(err)
+    }
+}
+
+impl From<bitcoin_rpc::Error> for Error {
+    fn from(err: bitcoin_rpc::Error) -> Self {
+        Error::Rpc(err)
+    }
+}
+
 pub struct Processor;
 
 impl Processor {
@@ -314,17 +326,5 @@ impl Drop for Processor {
         if thread::panicking() {
             std::process::exit(0x1);
         }
-    }
-}
-
-impl From<crate::db::rocks::Error> for Error {
-    fn from(err: crate::db::rocks::Error) -> Self {
-        Error::Db(err)
-    }
-}
-
-impl From<bitcoin_rpc::Error> for Error {
-    fn from(err: bitcoin_rpc::Error) -> Self {
-        Error::Rpc(err)
     }
 }
