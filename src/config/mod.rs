@@ -91,7 +91,7 @@ impl Config {
             config_file
                 .ntfy
                 .password
-                .map(|password| Auth::new(username, password))
+                .map(|password| Auth::credentials(username, password))
         } else {
             None
         };
