@@ -17,9 +17,15 @@ impl Nostr {
         let opts = Options::new()
             .connection_timeout(Some(Duration::from_secs(10)))
             .difficulty(CONFIG.nostr.pow_difficulty);
-        let client: Client = Client::with_opts(&CONFIG.nostr.keys, opts);
+        let client: Client = Client::builder()
+            .signer(CONFIG.nostr.keys.clone())
+            .opts(opts)
+            .build();
 
-        client.add_relays(CONFIG.nostr.relays.clone()).await?;
+        for relay in CONFIG.nostr.relays.iter() {
+            client.add_relay(relay).await?;
+        }
+
         client.connect().await;
 
         let mut metadata = Metadata::new()
@@ -51,7 +57,7 @@ impl Nostr {
                                 "Impossible to get nostr notifications from db: {:?}",
                                 error
                             );
-                            thread::sleep(Duration::from_secs(60));
+                            tokio::time::sleep(Duration::from_secs(60)).await;
                             continue;
                         }
                     };
@@ -83,7 +89,7 @@ impl Nostr {
                 }
 
                 tracing::debug!("Wait for new notifications");
-                thread::sleep(Duration::from_secs(60));
+                tokio::time::sleep(Duration::from_secs(60)).await;
             }
         });
 

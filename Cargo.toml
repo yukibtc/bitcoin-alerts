@@ -15,13 +15,13 @@ bitcoin = "0.32"
 bitcoin-rpc = { git = "https://github.com/yukibtc/bitcoin-rpc", rev = "10a6c31fc189d6bd7ed79cad347b814e19853935" }
 clap = { version = "4.4", features = ["derive"] }
 dirs = "5.0"
-nostr-sdk = { version = "0.30", default-features = false }
+nostr-sdk = { version = "0.36", default-features = false }
 ntfy = "0.6"
 num_cpus = "1.16"
 rocksdb = { version = "0.21", default-features = false, features = ["multi-threaded-cf", "zstd"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+tokio = { version = "1.41", features = ["rt-multi-thread", "macros"] }
 tokio-stream = "0.1"
 toml = "0.5"
 tracing = "0.1"
