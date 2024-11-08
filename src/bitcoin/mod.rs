@@ -9,6 +9,7 @@ mod constants;
 mod processor;
 mod rpc;
 
+use self::constants::DEFATL_RPC_TIMEOUT;
 use self::processor::Processor;
 pub use self::rpc::RpcClient;
 use crate::config::Config;
@@ -21,7 +22,7 @@ pub async fn run(
     notification_store: NotificationStore,
 ) {
     loop {
-        let blockchain_info = match rpc.get_blockchain_info().await {
+        let blockchain_info = match rpc.get_blockchain_info(DEFATL_RPC_TIMEOUT).await {
             Ok(data) => data,
             Err(e) => {
                 tracing::error!("Get blockchain info: {e} - retrying in 60 sec");
@@ -30,7 +31,7 @@ pub async fn run(
             }
         };
 
-        let network_info = match rpc.get_network_info().await {
+        let network_info = match rpc.get_network_info(DEFATL_RPC_TIMEOUT).await {
             Ok(data) => data,
             Err(error) => {
                 tracing::error!("Get network info: {:?} - retrying in 60 sec", error);

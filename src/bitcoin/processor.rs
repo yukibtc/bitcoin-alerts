@@ -8,7 +8,7 @@ use bitcoincore_rpc::json::GetMiningInfoResult;
 use nostr_sdk::Result;
 use tokio::time;
 
-use super::constants::{BLOCK_ALERTS, SUPPLY_ALERTS};
+use super::constants::{BLOCK_ALERTS, DEFATL_RPC_TIMEOUT, SUPPLY_ALERTS};
 use super::rpc::RpcClient;
 use crate::config::Config;
 use crate::db::{BitcoinStore, NotificationStore};
@@ -43,7 +43,7 @@ impl Processor {
         let mut delay = 30; // Delay seconds
 
         loop {
-            let block_height: u64 = match self.rpc.get_block_count().await {
+            let block_height: u64 = match self.rpc.get_block_count(DEFATL_RPC_TIMEOUT).await {
                 Ok(height) => {
                     tracing::debug!("Current block is {height}");
                     height
@@ -104,7 +104,7 @@ impl Processor {
     }
 
     async fn process_block(&self, block_height: u64) -> Result<()> {
-        let mining_info = self.rpc.get_mining_info().await?;
+        let mining_info = self.rpc.get_mining_info(DEFATL_RPC_TIMEOUT).await?;
 
         self.halving(block_height)?;
         self.difficulty_adjustment(block_height, &mining_info)?;
@@ -204,7 +204,10 @@ impl Processor {
         let current_reward: f64 = 50.0 / f64::powf(2.0, current_halving as f64);
 
         if block_height % 50_000 == 0 || self.bitcoin_store.get_last_supply().is_err() {
-            let txoutset_info = self.rpc.get_tx_out_set_info(block_height).await?;
+            let txoutset_info = self
+                .rpc
+                .get_tx_out_set_info(Duration::from_secs(120), block_height)
+                .await?;
             let mut total_supply: f64 = txoutset_info.total_amount.to_btc();
 
             tracing::debug!(
