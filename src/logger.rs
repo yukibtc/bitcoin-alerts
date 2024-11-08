@@ -3,13 +3,13 @@
 
 use tracing::Level;
 
-use crate::CONFIG;
+use crate::config::Config;
 
-pub fn init() {
-    let level: Level = if cfg!(debug_assertions) && CONFIG.log_level != Level::TRACE {
+pub fn init(config: &Config) {
+    let level: Level = if cfg!(debug_assertions) && config.log_level != Level::TRACE {
         Level::DEBUG
     } else {
-        CONFIG.log_level
+        config.log_level
     };
 
     let subscriber = tracing_subscriber::FmtSubscriber::builder()

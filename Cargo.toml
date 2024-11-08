@@ -7,7 +7,6 @@ homepage = "https://github.com/yukibtc/bitcoin-alerts"
 repository = "https://github.com/yukibtc/bitcoin-alerts.git"
 license = "MIT"
 readme = "README.md"
-rust-version = "1.80.0"
 keywords = ["bitcoin", "alerts", "notifications"]
 
 [dependencies]

@@ -1,77 +1,64 @@
 // Copyright (c) 2021-2024 Yuki Kishimoto
 // Distributed under the MIT software license
 
-use std::convert::From;
-use std::thread;
 use std::time::{Duration, Instant};
 
 use bitcoin::network::Network;
 use bitcoincore_rpc::json::GetMiningInfoResult;
-use bitcoincore_rpc::RpcApi;
+use nostr_sdk::Result;
+use tokio::time;
 
-use crate::bitcoin::RPC;
+use super::constants::{BLOCK_ALERTS, SUPPLY_ALERTS};
+use super::rpc::RpcClient;
+use crate::config::Config;
+use crate::db::{BitcoinStore, NotificationStore};
 use crate::primitives::Target;
-use crate::{util, BITCOIN_STORE, CONFIG, NOTIFICATION_STORE};
+use crate::util;
 
-const SUPPLY_ALERTS: &[f64] = &[
-    19_200_000.0,
-    19_300_000.0,
-    19_400_000.0,
-    19_500_000.0,
-    19_600_000.0,
-    19_700_000.0,
-    19_800_000.0,
-    19_900_000.0,
-    20_000_000.0,
-];
-
-const BLOCK_ALERTS: &[u64] = &[
-    840_000, 850_000, 888_888, 900_000, 950_000, 999_999, 1_000_000, 1_111_111,
-];
-
-#[derive(Debug)]
-pub enum Error {
-    Db(crate::db::rocks::Error),
-    Rpc(bitcoincore_rpc::Error),
+pub struct Processor {
+    config: Config,
+    rpc: RpcClient,
+    bitcoin_store: BitcoinStore,
+    notification_store: NotificationStore,
 }
-
-impl From<crate::db::rocks::Error> for Error {
-    fn from(err: crate::db::rocks::Error) -> Self {
-        Error::Db(err)
-    }
-}
-
-impl From<bitcoincore_rpc::Error> for Error {
-    fn from(err: bitcoincore_rpc::Error) -> Self {
-        Error::Rpc(err)
-    }
-}
-
-pub struct Processor;
 
 impl Processor {
-    pub fn run() {
-        tracing::info!("Bitcoin Block Processor started");
+    pub fn new(
+        config: Config,
+        rpc: RpcClient,
+        bitcoin_store: BitcoinStore,
+        notification_store: NotificationStore,
+    ) -> Self {
+        Self {
+            config,
+            rpc,
+            bitcoin_store,
+            notification_store,
+        }
+    }
+
+    pub async fn run(&self) {
+        tracing::info!("Bitcoin Processor started");
 
         let mut delay = 30; // Delay seconds
 
         loop {
-            let block_height: u64 = match RPC.get_block_count() {
-                Ok(n) => {
-                    tracing::debug!("Current block is {}", n);
-                    n
+            let block_height: u64 = match self.rpc.get_block_count().await {
+                Ok(height) => {
+                    tracing::debug!("Current block is {height}");
+                    height
                 }
-                Err(err) => {
-                    tracing::error!("Get block height: {:?}", err);
-                    thread::sleep(Duration::from_secs(60));
+                Err(e) => {
+                    tracing::error!("Get block height: {e}");
+                    time::sleep(Duration::from_secs(60)).await;
                     continue;
                 }
             };
 
-            let last_processed_block: u64 = match BITCOIN_STORE.get_last_processed_block() {
+            let last_processed_block: u64 = match self.bitcoin_store.get_last_processed_block() {
                 Ok(value) => value,
                 Err(_) => {
-                    let _ = BITCOIN_STORE.set_last_processed_block(block_height);
+                    let _ = self.bitcoin_store.set_last_processed_block(block_height);
                     block_height
                 }
             };
@@ -80,13 +67,13 @@ impl Processor {
 
             if block_height <= last_processed_block {
                 tracing::debug!("Wait for new block");
-                thread::sleep(Duration::from_secs(60));
+                time::sleep(Duration::from_secs(60)).await;
                 continue;
             }
 
             let next_block_to_process: u64 = last_processed_block + 1;
             let start = Instant::now();
-            match Self::process_block(next_block_to_process) {
+            match self.process_block(next_block_to_process).await {
                 Ok(_) => {
                     delay = 30;
 
@@ -96,17 +83,19 @@ impl Processor {
                         next_block_to_process,
                         elapsed_time
                     );
-                    let _ = BITCOIN_STORE.set_last_processed_block(next_block_to_process);
+                    let _ = self
+                        .bitcoin_store
+                        .set_last_processed_block(next_block_to_process);
                 }
-                Err(err) => {
+                Err(e) => {
                     if delay > 3600 {
-                        tracing::error!("Impossible to process block: {:?}", err);
+                        tracing::error!("Impossible to process block: {e}");
                         std::process::exit(0x1);
                     }
 
-                    tracing::error!("Process block: {:?} - retrying in {} sec", err, delay);
+                    tracing::error!("Process block: {e} - retrying in {delay} secs");
 
-                    thread::sleep(Duration::from_secs(delay));
+                    time::sleep(Duration::from_secs(delay)).await;
 
                     delay *= 2;
                 }
@@ -114,18 +103,18 @@ impl Processor {
         }
     }
 
-    fn process_block(block_height: u64) -> Result<(), Error> {
-        let mining_info = RPC.get_mining_info()?;
+    async fn process_block(&self, block_height: u64) -> Result<()> {
+        let mining_info = self.rpc.get_mining_info().await?;
 
-        Self::halving(block_height)?;
-        Self::difficulty_adjustment(block_height, &mining_info)?;
-        Self::supply(block_height)?;
-        Self::hashrate(&mining_info)?;
-        Self::block(block_height)?;
+        self.halving(block_height)?;
+        self.difficulty_adjustment(block_height, &mining_info)?;
+        self.supply(block_height).await?;
+        self.hashrate(&mining_info)?;
+        self.block(block_height)?;
         Ok(())
     }
 
-    fn halving(block_height: u64) -> Result<(), Error> {
+    fn halving(&self, block_height: u64) -> Result<()> {
         if block_height % 210_000 == 0 {
             let halving: u64 = block_height / 210_000;
 
@@ -146,11 +135,11 @@ impl Processor {
                         _ => "th",
                     }
                 );
-                Self::queue_notification(plain_text)?;
+                self.queue_notification(plain_text)?;
 
                 // Send block reward notification
                 let plain_text: String = format!("⛏️ New block reward: {block_reward:.2} BTC ⛏️");
-                Self::queue_notification(plain_text)?;
+                self.queue_notification(plain_text)?;
             } else {
                 tracing::warn!("Halving > 32 ({halving})");
             }
@@ -175,7 +164,7 @@ impl Processor {
                     util::format_number(missing_blocks as usize)
                 );
 
-                Self::queue_notification(plain_text)?;
+                self.queue_notification(plain_text)?;
             }
         }
 
@@ -183,16 +172,17 @@ impl Processor {
     }
 
     fn difficulty_adjustment(
+        &self,
         block_height: u64,
         mining_info: &GetMiningInfoResult,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         if block_height % 2016 == 0 {
             let difficulty: f64 = mining_info.difficulty / u64::pow(10, 12) as f64;
 
-            let last_difficulty: f64 = match BITCOIN_STORE.get_last_difficulty() {
+            let last_difficulty: f64 = match self.bitcoin_store.get_last_difficulty() {
                 Ok(value) => value,
                 Err(_) => {
-                    BITCOIN_STORE.set_last_difficculty(difficulty)?;
+                    self.bitcoin_store.set_last_difficculty(difficulty)?;
                     difficulty
                 }
             };
@@ -202,19 +192,19 @@ impl Processor {
             let plain_text: String =
                 format!("⛏️ Difficulty adj: {difficulty:.2}T ({change:.2}%) ⛏️");
 
-            Self::queue_notification(plain_text)?;
-            BITCOIN_STORE.set_last_difficculty(difficulty)?;
+            self.queue_notification(plain_text)?;
+            self.bitcoin_store.set_last_difficculty(difficulty)?;
         }
 
         Ok(())
     }
 
-    fn supply(block_height: u64) -> Result<(), Error> {
+    async fn supply(&self, block_height: u64) -> Result<()> {
         let current_halving: u64 = block_height / 210_000;
         let current_reward: f64 = 50.0 / f64::powf(2.0, current_halving as f64);
 
-        if block_height % 50_000 == 0 || BITCOIN_STORE.get_last_supply().is_err() {
-            let txoutset_info = RPC.get_tx_out_set_info(None, None, None)?;
+        if block_height % 50_000 == 0 || self.bitcoin_store.get_last_supply().is_err() {
+            let txoutset_info = self.rpc.get_tx_out_set_info(block_height).await?;
             let mut total_supply: f64 = txoutset_info.total_amount.to_btc();
 
             tracing::debug!(
@@ -227,12 +217,14 @@ impl Processor {
                 total_supply -= (txoutset_info.height - block_height) as f64 * current_reward;
             }
 
-            let _ = BITCOIN_STORE.set_last_supply(total_supply);
-        } else if let Ok(last_supply) = BITCOIN_STORE.get_last_supply() {
-            let _ = BITCOIN_STORE.set_last_supply(last_supply + current_reward);
+            let _ = self.bitcoin_store.set_last_supply(total_supply);
+        } else if let Ok(last_supply) = self.bitcoin_store.get_last_supply() {
+            let _ = self
+                .bitcoin_store
+                .set_last_supply(last_supply + current_reward);
         }
 
-        if let Ok(last_supply) = BITCOIN_STORE.get_last_supply() {
+        if let Ok(last_supply) = self.bitcoin_store.get_last_supply() {
             tracing::debug!("Total supply: {} BTC", last_supply);
 
             for supply_alert in SUPPLY_ALERTS.iter() {
@@ -242,7 +234,7 @@ impl Processor {
                         util::format_number(*supply_alert as usize)
                     );
 
-                    Self::queue_notification(plain_text)?;
+                    self.queue_notification(plain_text)?;
                 }
             }
         }
@@ -250,69 +242,73 @@ impl Processor {
         Ok(())
     }
 
-    fn hashrate(mining_info: &GetMiningInfoResult) -> Result<(), Error> {
+    fn hashrate(&self, mining_info: &GetMiningInfoResult) -> Result<()> {
         let current_hashrate: f64 = mining_info.network_hash_ps / u64::pow(10, 18) as f64; // Hashrate in EH/s
 
-        let last_hashrate_ath: f64 = match BITCOIN_STORE.get_last_hashrate_ath() {
+        let last_hashrate_ath: f64 = match self.bitcoin_store.get_last_hashrate_ath() {
             Ok(value) => value,
             Err(_) => {
-                BITCOIN_STORE.set_last_hashrate_ath(current_hashrate)?;
+                self.bitcoin_store.set_last_hashrate_ath(current_hashrate)?;
                 current_hashrate
             }
         };
 
         if current_hashrate > last_hashrate_ath {
             let plain_text: String = format!("🎉  New hashrate ATH: {current_hashrate:.2} EH/s 🎉");
-            Self::queue_notification(plain_text)?;
-            BITCOIN_STORE.set_last_hashrate_ath(current_hashrate)?;
+            self.queue_notification(plain_text)?;
+            self.bitcoin_store.set_last_hashrate_ath(current_hashrate)?;
         }
 
         Ok(())
     }
 
-    fn block(block_height: u64) -> Result<(), Error> {
+    fn block(&self, block_height: u64) -> Result<()> {
         if BLOCK_ALERTS.contains(&block_height) {
             let plain_text: String = format!(
                 "⛓️ Reached block {} ⛓️",
                 util::format_number(block_height as usize)
             );
-            Self::queue_notification(plain_text)?;
+            self.queue_notification(plain_text)?;
         }
 
-        if CONFIG.bitcoin.network == Network::Regtest {
+        if self.config.bitcoin.network == Network::Regtest {
             let plain_text: String = format!(
                 "⛓️ Reached block {} ⛓️",
                 util::format_number(block_height as usize)
             );
-            Self::queue_notification(plain_text)?;
+            self.queue_notification(plain_text)?;
         }
 
         Ok(())
     }
 
-    fn queue_notification<S>(plain_text: S) -> Result<(), Error>
+    fn queue_notification<S>(&self, plain_text: S) -> Result<()>
     where
         S: AsRef<str>,
     {
         let plain_text: &str = plain_text.as_ref();
 
-        if CONFIG.ntfy.enabled {
-            Self::queue_notification_with_target(Target::Ntfy, plain_text, plain_text)?;
+        if self.config.ntfy.enabled {
+            self.queue_notification_with_target(Target::Ntfy, plain_text, plain_text)?;
         }
 
-        if CONFIG.nostr.enabled {
-            Self::queue_notification_with_target(Target::Nostr, plain_text, plain_text)?;
+        if self.config.nostr.enabled {
+            self.queue_notification_with_target(Target::Nostr, plain_text, plain_text)?;
         }
 
         Ok(())
     }
 
     fn queue_notification_with_target(
+        &self,
         target: Target,
         plain_text: &str,
         html: &str,
-    ) -> Result<(), Error> {
-        match NOTIFICATION_STORE.create_notification(target, plain_text, html) {
+    ) -> Result<()> {
+        match self
+            .notification_store
+            .create_notification(target, plain_text, html)
+        {
             Ok(_) => tracing::info!("Queued a new notification for {}", target),
             Err(err) => {
                 tracing::error!("Impossible to queue notification for {}: {:?}", target, err)
@@ -320,13 +316,5 @@ impl Processor {
         };
 
         Ok(())
-    }
-}
-
-impl Drop for Processor {
-    fn drop(&mut self) {
-        if thread::panicking() {
-            std::process::exit(0x1);
-        }
     }
 }

@@ -2,6 +2,7 @@
 // Distributed under the MIT software license
 
 use std::collections::HashMap;
+use std::fmt;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -25,6 +26,22 @@ pub enum Error {
     FailedToDeserialize,
     FailedToSerialize,
     ValueNotFound,
+}
+
+impl std::error::Error for Error {}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::RocksDb(e) => write!(f, "{e}"),
+            Self::FailedToPut => write!(f, "failed to put data"),
+            Self::FailedToGet => write!(f, "failed to get data"),
+            Self::FailedToDelete => write!(f, "failed to delete data"),
+            Self::FailedToDeserialize => write!(f, "failed to deserialize data"),
+            Self::FailedToSerialize => write!(f, "failed to serialize data"),
+            Self::ValueNotFound => write!(f, "value not found"),
+        }
+    }
 }
 
 impl From<rocksdb::Error> for Error {
@@ -88,7 +105,7 @@ impl Store {
 
     pub fn serialize<T>(&self, data: T) -> Result<Vec<u8>, Error>
     where
-        T: Serialize + std::fmt::Debug,
+        T: Serialize + fmt::Debug,
     {
         match serde_json::to_string(&data) {
             Ok(serialized) => Ok(serialized.into_bytes()),
@@ -139,7 +156,7 @@ impl Store {
     ) -> Result<(), Error>
     where
         K: AsRef<[u8]>,
-        V: Serialize + std::fmt::Debug,
+        V: Serialize + fmt::Debug,
     {
         self.put(cf, key, self.serialize(value)?)
     }

@@ -10,6 +10,7 @@ use nostr_sdk::{Keys, SecretKey, Url};
 use ntfy::Auth;
 use tracing::Level;
 
+#[derive(Clone)]
 pub struct Bitcoin {
     pub network: Network,
     pub rpc_addr: SocketAddr,
@@ -26,6 +27,7 @@ pub struct ConfigFileBitcoin {
     pub rpc_password: String,
 }
 
+#[derive(Clone)]
 pub struct Ntfy {
     pub enabled: bool,
     pub url: String,
@@ -44,34 +46,35 @@ pub struct ConfigFileNtfy {
     pub proxy: Option<String>,
 }
 
+#[derive(Clone)]
 pub struct Nostr {
     pub enabled: bool,
-    pub keys: Keys,
+    pub keys: Option<Keys>,
     pub name: String,
     pub display_name: String,
     pub description: String,
     pub picture: Url,
     pub nip05: Option<String>,
     pub lud16: String,
-    pub relays: Vec<Url>,
+    pub relays: Option<Vec<Url>>,
     pub pow_difficulty: u8,
 }
 
 #[derive(Deserialize)]
 pub struct ConfigFileNostr {
     pub enabled: Option<bool>,
-    pub secret_key: SecretKey,
+    pub secret_key: Option<SecretKey>,
     pub name: Option<String>,
     pub display_name: Option<String>,
     pub description: Option<String>,
     pub picture: Option<Url>,
     pub nip05: Option<String>,
     pub lud16: Option<String>,
-    pub relays: Vec<Url>,
+    pub relays: Option<Vec<Url>>,
     pub pow_difficulty: Option<u8>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Config {
     pub main_path: PathBuf,
     pub log_level: Level,
@@ -119,7 +122,11 @@ impl fmt::Debug for Nostr {
             f,
             "{{ enabled: {}, relays: {:?}, pow_difficulty: {} }}",
             self.enabled,
-            self.relays.iter().map(|u| u.as_str()).collect::<Vec<_>>(),
+            self.relays
+                .clone()
+                .unwrap_or_default()
+                .into_iter()
+                .collect::<Vec<_>>(),
             self.pow_difficulty
         )
     }

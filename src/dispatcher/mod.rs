@@ -1,38 +1,19 @@
 // Copyright (c) 2021-2024 Yuki Kishimoto
 // Distributed under the MIT software license
 
-use std::thread;
-
-use nostr_sdk::Result;
-
 mod nostr;
 mod ntfy;
 
-use self::nostr::Nostr;
-use self::ntfy::Ntfy;
+use crate::config::Config;
+use crate::db::NotificationStore;
 
-use crate::CONFIG;
-
-pub struct Dispatcher;
-
-impl Dispatcher {
-    pub async fn run() -> Result<()> {
-        if CONFIG.ntfy.enabled {
-            Ntfy::run().await?;
+pub async fn run(config: Config, store: &NotificationStore) {
+    tokio::select! {
+        _ = ntfy::run(&config, store) => {
+            println!("ntfy exited.");
         }
-
-        if CONFIG.nostr.enabled {
-            Nostr::run().await?;
-        }
-
-        Ok(())
-    }
-}
-
-impl Drop for Dispatcher {
-    fn drop(&mut self) {
-        if thread::panicking() {
-            std::process::exit(0x1);
+        _ = nostr::run(&config, store) => {
+            println!("nostr exited.");
         }
     }
 }

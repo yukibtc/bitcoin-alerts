@@ -1,10 +1,6 @@
 // Copyright (c) 2021-2024 Yuki Kishimoto
 // Distributed under the MIT software license
 
-use std::sync::LazyLock;
-use std::thread;
-use std::time::Duration;
-
 #[macro_use]
 extern crate serde;
 
@@ -18,26 +14,31 @@ mod logger;
 mod primitives;
 mod util;
 
-use self::bitcoin::Bitcoin;
+use self::bitcoin::RpcClient;
 use self::config::Config;
 use self::db::{BitcoinStore, NotificationStore};
-use self::dispatcher::Dispatcher;
-
-static CONFIG: LazyLock<Config> = LazyLock::new(Config::from_args);
-static BITCOIN_STORE: LazyLock<BitcoinStore> =
-    LazyLock::new(|| BitcoinStore::open(&CONFIG.bitcoin.db_path).unwrap());
-static NOTIFICATION_STORE: LazyLock<NotificationStore> =
-    LazyLock::new(|| NotificationStore::open(&CONFIG.main_path.join("notification")).unwrap());
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    logger::init();
+    // Get config
+    let config = Config::from_args();
 
-    Bitcoin::run();
+    // Init logger
+    logger::init(&config);
 
-    Dispatcher::run().await?;
+    let rpc = RpcClient::new(&config);
+    let bitcoin_store = BitcoinStore::open(&config.bitcoin.db_path).unwrap();
+    let notification_store =
+        NotificationStore::open(&config.main_path.join("notification")).unwrap();
 
-    loop {
-        tokio::time::sleep(Duration::from_secs(60)).await;
+    tokio::select! {
+        _ = bitcoin::run(config.clone(), rpc, bitcoin_store, notification_store.clone()) => {
+            println!("Bitcoin processor exited");
+        }
+        _ = dispatcher::run(config, &notification_store) => {
+            println!("Dispatcher exited");
+        }
     }
+
+    Ok(())
 }

@@ -5,68 +5,65 @@ use std::time::Duration;
 
 use nostr_sdk::Result;
 use ntfy::{Dispatcher, Payload};
+use tokio::time;
 
+use crate::config::Config;
+use crate::db::NotificationStore;
 use crate::primitives::Target;
-use crate::{CONFIG, NOTIFICATION_STORE};
 
-pub struct Ntfy;
+pub async fn run(config: &Config, store: &NotificationStore) -> Result<()> {
+    // If not enabled, infinite loop
+    if !config.ntfy.enabled {
+        loop {
+            time::sleep(Duration::from_secs(60)).await;
+        }
+    }
 
-impl Ntfy {
-    pub async fn run() -> Result<()> {
-        let dispatcher = Dispatcher::new(
-            &CONFIG.ntfy.url,
-            CONFIG.ntfy.auth.clone(),
-            CONFIG.ntfy.proxy.as_ref(),
-        )?;
+    let dispatcher = Dispatcher::new(
+        &config.ntfy.url,
+        config.ntfy.auth.clone(),
+        config.ntfy.proxy.as_ref(),
+    )?;
 
-        tokio::spawn(async move {
-            tracing::info!("Ntfy Dispatcher started");
+    tracing::info!("Ntfy Dispatcher started");
 
-            loop {
-                tracing::debug!("Process pending notifications");
+    loop {
+        tracing::debug!("Process pending notifications");
 
-                let notifications =
-                    match NOTIFICATION_STORE.get_notifications_by_target(Target::Ntfy) {
-                        Ok(result) => result,
-                        Err(error) => {
-                            tracing::error!(
-                                "Impossible to get ntfy notifications from db: {:?}",
-                                error
-                            );
-                            tokio::time::sleep(Duration::from_secs(60)).await;
-                            continue;
-                        }
-                    };
+        let notifications = match store.get_notifications_by_target(Target::Ntfy) {
+            Ok(result) => result,
+            Err(error) => {
+                tracing::error!("Impossible to get ntfy notifications from db: {:?}", error);
+                time::sleep(Duration::from_secs(60)).await;
+                continue;
+            }
+        };
 
-                for (id, notification) in notifications.into_iter() {
-                    let payload = Payload::new(&CONFIG.ntfy.topic)
-                        .message(&notification.plain_text)
-                        .title("Bitcoin Alerts");
+        for (id, notification) in notifications.into_iter() {
+            let payload = Payload::new(&config.ntfy.topic)
+                .message(&notification.plain_text)
+                .title("Bitcoin Alerts");
 
-                    match dispatcher.send(&payload).await {
-                        Ok(_) => {
-                            tracing::info!("Sent notification: {}", notification.plain_text);
+            match dispatcher.send(&payload).await {
+                Ok(_) => {
+                    tracing::info!("Sent notification: {}", notification.plain_text);
 
-                            match NOTIFICATION_STORE.delete_notification(id.as_str()) {
-                                Ok(_) => tracing::debug!("Notification {} deleted", id),
-                                Err(error) => tracing::error!(
-                                    "Impossible to delete notification {}: {:#?}",
-                                    id,
-                                    error
-                                ),
-                            };
-                        }
-                        Err(err) => {
-                            tracing::error!("Impossible to send notification {}: {:?}", id, err)
-                        }
+                    match store.delete_notification(id.as_str()) {
+                        Ok(_) => tracing::debug!("Notification {} deleted", id),
+                        Err(error) => tracing::error!(
+                            "Impossible to delete notification {}: {:#?}",
+                            id,
+                            error
+                        ),
                     };
                 }
+                Err(err) => {
+                    tracing::error!("Impossible to send notification {}: {:?}", id, err)
+                }
+            };
+        }
 
-                tracing::debug!("Wait for new notifications");
-                tokio::time::sleep(Duration::from_secs(30)).await;
-            }
-        });
-
-        Ok(())
+        tracing::debug!("Wait for new notifications");
+        time::sleep(Duration::from_secs(30)).await;
     }
 }

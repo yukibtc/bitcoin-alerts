@@ -16,6 +16,7 @@ pub struct Notification {
     pub html: String,
 }
 
+#[derive(Clone)]
 pub struct NotificationStore {
     pub db: Store,
 }
@@ -50,11 +51,6 @@ impl NotificationStore {
 
         self.db.put_serialized(self.notification_cf(), key, &value)
     }
-
-    /* pub fn get_all_notifications(&self) -> Result<HashMap<String, Notification>, Error> {
-        self.db
-            .iterator_str_serialized::<Notification>(self.notification_cf())
-    } */
 
     pub fn get_notifications_by_target(
         &self,

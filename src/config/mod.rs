@@ -115,7 +115,7 @@ impl Config {
             },
             nostr: Nostr {
                 enabled: config_file.nostr.enabled.unwrap_or(false),
-                keys: Keys::new(config_file.nostr.secret_key),
+                keys: config_file.nostr.secret_key.map(Keys::new),
                 name: config_file.nostr.name.unwrap_or_else(|| String::from("bitcoin_alerts")),
                 display_name: config_file.nostr.display_name.unwrap_or_else(|| String::from("Bitcoin Alerts")),
                 description: config_file.nostr.description.unwrap_or_else(|| String::from("Hashrate, supply, blocks until halving, difficulty adjustment and more.\n\nBuilt with https://crates.io/crates/nostr-sdk 🦀")),
