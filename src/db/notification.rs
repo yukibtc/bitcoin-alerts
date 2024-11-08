@@ -56,27 +56,16 @@ impl NotificationStore {
         &self,
         target: Target,
     ) -> Result<HashMap<String, Notification>, Error> {
-        let mut notification: HashMap<String, Notification> = HashMap::new();
         let collection = self
             .db
             .iterator_str_serialized::<Notification>(self.notification_cf())?;
-
-        collection.into_iter().for_each(|(key, value)| {
-            if value.target == target {
-                notification.insert(key, value);
-            }
-        });
-
-        Ok(notification)
+        Ok(collection
+            .into_iter()
+            .filter(|(_, value)| value.target == target)
+            .collect())
     }
 
     pub fn delete_notification(&self, id: &str) -> Result<(), Error> {
-        self.db.delete(self.notification_cf(), id)
-    }
-}
-
-impl Drop for NotificationStore {
-    fn drop(&mut self) {
-        tracing::trace!("Closing Database");
+        self.db.delete(&self.notification_cf(), id)
     }
 }

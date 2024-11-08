@@ -12,11 +12,6 @@ pub use rocksdb::{
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
-#[derive(Clone)]
-pub struct Store {
-    db: Arc<rocksdb::DB>,
-}
-
 #[derive(Debug)]
 pub enum Error {
     RocksDb(rocksdb::Error),
@@ -61,6 +56,11 @@ fn default_opts() -> rocksdb::Options {
     opts.set_enable_write_thread_adaptive_yield(true);
     opts.set_disable_auto_compactions(true); // for initial bulk load
     opts
+}
+
+#[derive(Clone)]
+pub struct Store {
+    db: Arc<rocksdb::DB>,
 }
 
 impl Store {
@@ -161,9 +161,12 @@ impl Store {
         self.put(cf, key, self.serialize(value)?)
     }
 
-    pub fn iterator(&self, cf: Arc<BoundColumnFamily>) -> Result<HashMap<Vec<u8>, Vec<u8>>, Error> {
+    pub fn iterator(
+        &self,
+        cf: &Arc<BoundColumnFamily>,
+    ) -> Result<HashMap<Vec<u8>, Vec<u8>>, Error> {
         let mut collection = HashMap::new();
-        let mut iter = self.db.raw_iterator_cf(&cf);
+        let mut iter = self.db.raw_iterator_cf(cf);
         iter.seek_to_first();
         while iter.valid() {
             if let Some(key) = iter.key() {
@@ -183,7 +186,7 @@ impl Store {
         V: DeserializeOwned,
     {
         let mut collection = HashMap::new();
-        for (key, value) in self.iterator(cf.clone())?.iter() {
+        for (key, value) in self.iterator(&cf)?.iter() {
             match String::from_utf8(key.to_vec()) {
                 Ok(key) => {
                     match self.deserialize::<V>(value.to_vec()) {
@@ -192,7 +195,7 @@ impl Store {
                         }
                         Err(error) => {
                             tracing::error!("Failed to deserialize value: {:?}", error);
-                            let _ = self.delete(cf.clone(), key);
+                            let _ = self.delete(&cf, key);
                         }
                     };
                 }
@@ -202,11 +205,11 @@ impl Store {
         Ok(collection)
     }
 
-    pub fn delete<K>(&self, cf: Arc<BoundColumnFamily>, key: K) -> Result<(), Error>
+    pub fn delete<K>(&self, cf: &Arc<BoundColumnFamily>, key: K) -> Result<(), Error>
     where
         K: AsRef<[u8]>,
     {
-        match self.db.delete_cf(&cf, key) {
+        match self.db.delete_cf(cf, key) {
             Ok(_) => Ok(()),
             Err(error) => {
                 tracing::error!("Impossible to delete key from database: {}", error);

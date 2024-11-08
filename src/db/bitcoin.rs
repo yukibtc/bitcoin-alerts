@@ -90,9 +90,3 @@ impl BitcoinStore {
             .put(self.network_cf(), "last_hashrate_ath", hashrate.to_string())
     }
 }
-
-impl Drop for BitcoinStore {
-    fn drop(&mut self) {
-        tracing::trace!("Closing Database");
-    }
-}
