@@ -4,7 +4,8 @@
 use std::time::Duration;
 
 use nostr_sdk::Result;
-use ntfy::{Dispatcher, Payload};
+use ntfy::dispatcher::Async;
+use ntfy::{Dispatcher, DispatcherBuilder, Payload};
 use tokio::time;
 
 use crate::config::Config;
@@ -19,11 +20,17 @@ pub async fn run(config: &Config, store: &NotificationStore) -> Result<()> {
         }
     }
 
-    let dispatcher = Dispatcher::new(
-        &config.ntfy.url,
-        config.ntfy.auth.clone(),
-        config.ntfy.proxy.as_ref(),
-    )?;
+    let mut dispatcher = DispatcherBuilder::new(&config.ntfy.url);
+
+    if let Some(credentials) = &config.ntfy.auth {
+        dispatcher = dispatcher.credentials(credentials.clone());
+    }
+
+    if let Some(proxy) = &config.ntfy.proxy {
+        dispatcher = dispatcher.proxy(proxy);
+    }
+
+    let dispatcher: Dispatcher<Async> = dispatcher.build_async()?;
 
     tracing::info!("Ntfy Dispatcher started");
 

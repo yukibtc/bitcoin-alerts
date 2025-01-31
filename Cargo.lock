@@ -1161,15 +1161,14 @@ dependencies = [
 
 [[package]]
 name = "ntfy"
-version = "0.6.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "97f5fca86b4296f0ff059cff544e8bfbd85b437bf0af69e11b7ffcb1b4e2bad8"
+checksum = "30bb106c0f23b713c6472d05eae4a8a8fd9b3e57ed4c4c68bce5c92875ceeea1"
 dependencies = [
  "base64 0.22.1",
  "reqwest",
  "serde",
  "serde_json",
- "thiserror 1.0.57",
  "url",
 ]
 
