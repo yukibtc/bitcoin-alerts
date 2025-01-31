@@ -3,8 +3,8 @@
 
 use std::time::Duration;
 
-use nostr_sdk::nostr::Metadata;
-use nostr_sdk::{Client, Options, Result};
+use nostr_sdk::nostr::nips::nip01::Metadata;
+use nostr_sdk::{Client, EventBuilder, Result};
 use tokio::time;
 
 use crate::config::Config;
@@ -20,10 +20,7 @@ pub async fn run(config: &Config, store: &NotificationStore) -> Result<()> {
     }
 
     let signer = config.nostr.keys.clone().unwrap();
-    let opts = Options::new()
-        .connection_timeout(Some(Duration::from_secs(10)))
-        .difficulty(config.nostr.pow_difficulty);
-    let client: Client = Client::builder().signer(signer).opts(opts).build();
+    let client: Client = Client::builder().signer(signer).build();
 
     for relay in config.nostr.relays.clone().unwrap().into_iter() {
         client.add_relay(relay).await?;
@@ -62,19 +59,22 @@ pub async fn run(config: &Config, store: &NotificationStore) -> Result<()> {
 
         if !notifications.is_empty() {
             for (id, notification) in notifications.into_iter() {
-                match client.publish_text_note(&notification.plain_text, []).await {
-                    Ok(_) => {
-                        tracing::info!("Sent notification: {}", notification.plain_text);
+                tracing::info!("Sending notification: {}", notification.plain_text);
 
-                        match store.delete_notification(id.as_str()) {
-                            Ok(_) => tracing::debug!("Notification {} deleted", id),
-                            Err(error) => tracing::error!(
-                                "Impossible to delete notification {}: {:#?}",
-                                id,
-                                error
-                            ),
-                        };
-                    }
+                // Create builder
+                let builder: EventBuilder = EventBuilder::text_note(notification.plain_text)
+                    .pow(config.nostr.pow_difficulty);
+
+                // Send event
+                match client.send_event_builder(builder).await {
+                    Ok(_) => match store.delete_notification(id.as_str()) {
+                        Ok(_) => tracing::debug!("Notification {} deleted", id),
+                        Err(error) => tracing::error!(
+                            "Impossible to delete notification {}: {:#?}",
+                            id,
+                            error
+                        ),
+                    },
                     Err(e) => {
                         tracing::error!("Impossible to send notification {id}: {e}")
                     }

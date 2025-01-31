@@ -14,7 +14,7 @@ bitcoin = "0.32"
 bitcoincore-rpc = "0.19"
 clap = { version = "4.5", features = ["derive"] }
 dirs = "5.0"
-nostr-sdk = { version = "0.36", default-features = false }
+nostr-sdk = { version = "0.39", default-features = false }
 ntfy = "0.6"
 rocksdb = { version = "0.22", default-features = false, features = ["multi-threaded-cf", "zstd"] }
 serde = { version = "1.0", features = ["derive"] }
