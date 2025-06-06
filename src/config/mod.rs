@@ -122,7 +122,7 @@ impl Config {
                 picture: config_file.nostr.picture.unwrap_or_else(|| Url::parse("https://avatars.githubusercontent.com/u/13464320").expect("Invalid url")),
                 nip05: config_file.nostr.nip05,
                 lud16: config_file.nostr.lud16.unwrap_or_else(|| String::from("yuki@getalby.com")),
-                relays: config_file.nostr.relays,
+                relays: config_file.nostr.relays.unwrap_or_default(),
                 pow_difficulty: config_file.nostr.pow_difficulty.unwrap_or(0),
             },
         };

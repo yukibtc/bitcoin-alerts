@@ -22,8 +22,8 @@ pub async fn run(config: &Config, store: &NotificationStore) -> Result<()> {
     let signer = config.nostr.keys.clone().unwrap();
     let client: Client = Client::builder().signer(signer).build();
 
-    for relay in config.nostr.relays.clone().unwrap().into_iter() {
-        client.add_relay(relay).await?;
+    for relay_url in config.nostr.relays.iter() {
+        client.add_relay(relay_url).await?;
     }
 
     client.connect().await;
@@ -41,6 +41,12 @@ pub async fn run(config: &Config, store: &NotificationStore) -> Result<()> {
 
     if let Err(err) = client.set_metadata(&metadata).await {
         tracing::error!("Impossible to update profile metadata: {}", err);
+    }
+
+    // Set NIP65 list
+    let builder = EventBuilder::relay_list(config.nostr.relays.iter().cloned().map(|u| (u, None)));
+    if let Err(err) = client.send_event_builder(builder).await {
+        tracing::error!("Impossible to set relay list: {}", err);
     }
 
     tracing::info!("Nostr Dispatcher started");

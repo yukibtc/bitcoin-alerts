@@ -1,12 +1,13 @@
 // Copyright (c) 2021-2024 Yuki Kishimoto
 // Distributed under the MIT software license
 
+use std::collections::HashSet;
 use std::fmt;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 
 use bitcoin::network::Network;
-use nostr_sdk::{Keys, SecretKey, Url};
+use nostr_sdk::{Keys, RelayUrl, SecretKey, Url};
 use ntfy::Auth;
 use tracing::Level;
 
@@ -56,7 +57,7 @@ pub struct Nostr {
     pub picture: Url,
     pub nip05: Option<String>,
     pub lud16: String,
-    pub relays: Option<Vec<Url>>,
+    pub relays: HashSet<RelayUrl>,
     pub pow_difficulty: u8,
 }
 
@@ -70,7 +71,7 @@ pub struct ConfigFileNostr {
     pub picture: Option<Url>,
     pub nip05: Option<String>,
     pub lud16: Option<String>,
-    pub relays: Option<Vec<Url>>,
+    pub relays: Option<HashSet<RelayUrl>>,
     pub pow_difficulty: Option<u8>,
 }
 
@@ -120,13 +121,13 @@ impl fmt::Debug for Nostr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{{ enabled: {}, relays: {:?}, pow_difficulty: {} }}",
+            "{{ enabled: {}, relays: [{}], pow_difficulty: {} }}",
             self.enabled,
             self.relays
-                .clone()
-                .unwrap_or_default()
-                .into_iter()
-                .collect::<Vec<_>>(),
+                .iter()
+                .map(|u| u.as_str())
+                .collect::<Vec<_>>()
+                .join(","),
             self.pow_difficulty
         )
     }
