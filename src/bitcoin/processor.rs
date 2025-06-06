@@ -206,7 +206,7 @@ impl Processor {
         if block_height % 50_000 == 0 || self.bitcoin_store.get_last_supply().is_err() {
             let txoutset_info = self
                 .rpc
-                .get_tx_out_set_info(Duration::from_secs(120), block_height)
+                .get_tx_out_set_info(Duration::from_secs(240))
                 .await?;
             let mut total_supply: f64 = txoutset_info.total_amount.to_btc();
 

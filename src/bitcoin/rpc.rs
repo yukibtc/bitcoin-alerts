@@ -6,7 +6,6 @@ use std::time::Duration;
 
 use bitcoincore_rpc::json::{
     GetBlockchainInfoResult, GetMiningInfoResult, GetNetworkInfoResult, GetTxOutSetInfoResult,
-    HashOrHeight,
 };
 use bitcoincore_rpc::{Auth, Client, RpcApi};
 use tokio::{task, time};
@@ -70,15 +69,10 @@ impl RpcClient {
     }
 
     #[inline]
-    pub async fn get_tx_out_set_info(
-        &self,
-        timeout: Duration,
-        height: u64,
-    ) -> Result<GetTxOutSetInfoResult> {
-        let height = HashOrHeight::Height(height);
+    pub async fn get_tx_out_set_info(&self, timeout: Duration) -> Result<GetTxOutSetInfoResult> {
         Ok(self
             .interact(
-                move |client| client.get_tx_out_set_info(None, Some(height), None),
+                move |client| client.get_tx_out_set_info(None, None, None),
                 timeout,
             )
             .await??)
