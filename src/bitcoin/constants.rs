@@ -15,8 +15,5 @@ use std::time::Duration;
 //     20_000_000.0,
 // ];
 
-pub const BLOCK_ALERTS: &[u64] = &[
-    840_000, 850_000, 888_888, 900_000, 950_000, 999_999, 1_000_000, 1_111_111,
-];
-
-pub const DEFATL_RPC_TIMEOUT: Duration = Duration::from_secs(60);
+pub const DEFAULT_RPC_TIMEOUT: Duration = Duration::from_secs(60);
+pub const BLOCK_HEIGHT_ROUND_MAGNITUDE: u32 = 4; // Notify blocks divisible by 10^4

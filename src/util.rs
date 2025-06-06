@@ -44,6 +44,30 @@ pub fn format_number(num: usize) -> String {
     number
 }
 
+/// Check if a number is a palindrome using pure math
+pub fn is_palindrome(mut n: u64) -> bool {
+    if n == 0 {
+        return true;
+    }
+
+    let original: u64 = n;
+    let mut reversed: u64 = 0;
+
+    // Reverse the number mathematically
+    while n > 0 {
+        reversed = reversed * 10 + n % 10;
+        n /= 10;
+    }
+
+    original == reversed
+}
+
+/// Check if a number is "round"
+#[inline]
+pub fn is_round_number(n: u64, magnitude: u32) -> bool {
+    n % (10u64.pow(magnitude)) == 0
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -56,5 +80,40 @@ mod test {
         assert_eq!(format_number(100000), "100,000".to_string());
         assert_eq!(format_number(1000000), "1,000,000".to_string());
         assert_eq!(format_number(1000000000), "1,000,000,000".to_string());
+    }
+
+    #[test]
+    fn test_is_palindrome() {
+        assert!(is_palindrome(900009));
+        assert!(is_palindrome(888888));
+        assert!(is_palindrome(999999));
+        assert!(is_palindrome(1110111));
+        assert!(is_palindrome(1_111_111));
+        assert!(is_palindrome(990099));
+        assert!(is_palindrome(12321));
+        assert!(is_palindrome(7));
+        assert!(is_palindrome(0));
+
+        assert!(!is_palindrome(123456));
+        assert!(!is_palindrome(900000));
+    }
+
+    #[test]
+    fn test_round_numbers() {
+        assert!(is_round_number(900_000, 4));
+        assert!(is_round_number(1_000_000, 4));
+        assert!(is_round_number(1_200_000, 4));
+        assert!(is_round_number(1_500_000, 4));
+        assert!(is_round_number(2_100_000, 4));
+        assert!(is_round_number(10_500_000, 4));
+        assert!(is_round_number(50_000, 4));
+        assert!(is_round_number(10_000, 4));
+
+        assert!(!is_round_number(7_000, 4));
+        assert!(!is_round_number(999_000, 4));
+        assert!(!is_round_number(123_456, 4));
+        assert!(!is_round_number(900_009, 4));
+        assert!(!is_round_number(999, 4));
+        assert!(!is_round_number(1200, 4));
     }
 }

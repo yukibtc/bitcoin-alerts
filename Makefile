@@ -10,7 +10,7 @@ rust:
 	curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
 precommit:
-	cargo fmt && cargo clippy
+	cargo fmt && cargo clippy && cargo test
 
 clean:
 	cargo clean

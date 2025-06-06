@@ -8,7 +8,7 @@ use bitcoincore_rpc::json::GetMiningInfoResult;
 use nostr_sdk::Result;
 use tokio::time;
 
-use super::constants::{BLOCK_ALERTS, DEFATL_RPC_TIMEOUT};
+use super::constants::{BLOCK_HEIGHT_ROUND_MAGNITUDE, DEFAULT_RPC_TIMEOUT};
 use super::rpc::RpcClient;
 use crate::config::Config;
 use crate::db::{BitcoinStore, NotificationStore};
@@ -43,7 +43,7 @@ impl Processor {
         let mut delay = 30; // Delay seconds
 
         loop {
-            let block_height: u64 = match self.rpc.get_block_count(DEFATL_RPC_TIMEOUT).await {
+            let block_height: u64 = match self.rpc.get_block_count(DEFAULT_RPC_TIMEOUT).await {
                 Ok(height) => {
                     tracing::debug!("Current block is {height}");
                     height
@@ -104,7 +104,7 @@ impl Processor {
     }
 
     async fn process_block(&self, block_height: u64) -> Result<()> {
-        let mining_info = self.rpc.get_mining_info(DEFATL_RPC_TIMEOUT).await?;
+        let mining_info = self.rpc.get_mining_info(DEFAULT_RPC_TIMEOUT).await?;
 
         self.halving(block_height)?;
         self.difficulty_adjustment(block_height, &mining_info)?;
@@ -266,7 +266,10 @@ impl Processor {
     }
 
     fn block(&self, block_height: u64) -> Result<()> {
-        if BLOCK_ALERTS.contains(&block_height) {
+        let is_round: bool = util::is_round_number(block_height, BLOCK_HEIGHT_ROUND_MAGNITUDE);
+        let is_palindrome: bool = util::is_palindrome(block_height);
+
+        if is_round || is_palindrome {
             let plain_text: String = format!(
                 "⛓️ Reached block {} ⛓️",
                 util::format_number(block_height as usize)
