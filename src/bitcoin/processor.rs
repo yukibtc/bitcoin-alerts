@@ -8,7 +8,7 @@ use bitcoincore_rpc::json::GetMiningInfoResult;
 use nostr_sdk::Result;
 use tokio::time;
 
-use super::constants::{BLOCK_ALERTS, DEFATL_RPC_TIMEOUT, SUPPLY_ALERTS};
+use super::constants::{BLOCK_ALERTS, DEFATL_RPC_TIMEOUT};
 use super::rpc::RpcClient;
 use crate::config::Config;
 use crate::db::{BitcoinStore, NotificationStore};
@@ -108,7 +108,7 @@ impl Processor {
 
         self.halving(block_height)?;
         self.difficulty_adjustment(block_height, &mining_info)?;
-        self.supply(block_height).await?;
+        //self.supply(block_height).await?;
         self.hashrate(&mining_info)?;
         self.block(block_height)?;
         Ok(())
@@ -199,51 +199,51 @@ impl Processor {
         Ok(())
     }
 
-    async fn supply(&self, block_height: u64) -> Result<()> {
-        let current_halving: u64 = block_height / 210_000;
-        let current_reward: f64 = 50.0 / f64::powf(2.0, current_halving as f64);
-
-        if block_height % 50_000 == 0 || self.bitcoin_store.get_last_supply().is_err() {
-            let txoutset_info = self
-                .rpc
-                .get_tx_out_set_info(Duration::from_secs(240))
-                .await?;
-            let mut total_supply: f64 = txoutset_info.total_amount.to_btc();
-
-            tracing::debug!(
-                "txoutset_info.height: {} - block_height: {}",
-                txoutset_info.height,
-                block_height
-            );
-
-            if txoutset_info.height != block_height {
-                total_supply -= (txoutset_info.height - block_height) as f64 * current_reward;
-            }
-
-            let _ = self.bitcoin_store.set_last_supply(total_supply);
-        } else if let Ok(last_supply) = self.bitcoin_store.get_last_supply() {
-            let _ = self
-                .bitcoin_store
-                .set_last_supply(last_supply + current_reward);
-        }
-
-        if let Ok(last_supply) = self.bitcoin_store.get_last_supply() {
-            tracing::debug!("Total supply: {} BTC", last_supply);
-
-            for supply_alert in SUPPLY_ALERTS.iter() {
-                if last_supply >= *supply_alert && last_supply - current_reward < *supply_alert {
-                    let plain_text: String = format!(
-                        "🎊 The supply has just reached {} BTC 🎊",
-                        util::format_number(*supply_alert as usize)
-                    );
-
-                    self.queue_notification(plain_text)?;
-                }
-            }
-        }
-
-        Ok(())
-    }
+    // async fn supply(&self, block_height: u64) -> Result<()> {
+    //     let current_halving: u64 = block_height / 210_000;
+    //     let current_reward: f64 = 50.0 / f64::powf(2.0, current_halving as f64);
+    //
+    //     if block_height % 50_000 == 0 || self.bitcoin_store.get_last_supply().is_err() {
+    //         let txoutset_info = self
+    //             .rpc
+    //             .get_tx_out_set_info(Duration::from_secs(240))
+    //             .await?;
+    //         let mut total_supply: f64 = txoutset_info.total_amount.to_btc();
+    //
+    //         tracing::debug!(
+    //             "txoutset_info.height: {} - block_height: {}",
+    //             txoutset_info.height,
+    //             block_height
+    //         );
+    //
+    //         if txoutset_info.height != block_height {
+    //             total_supply -= (txoutset_info.height - block_height) as f64 * current_reward;
+    //         }
+    //
+    //         let _ = self.bitcoin_store.set_last_supply(total_supply);
+    //     } else if let Ok(last_supply) = self.bitcoin_store.get_last_supply() {
+    //         let _ = self
+    //             .bitcoin_store
+    //             .set_last_supply(last_supply + current_reward);
+    //     }
+    //
+    //     if let Ok(last_supply) = self.bitcoin_store.get_last_supply() {
+    //         tracing::debug!("Total supply: {} BTC", last_supply);
+    //
+    //         for supply_alert in SUPPLY_ALERTS.iter() {
+    //             if last_supply >= *supply_alert && last_supply - current_reward < *supply_alert {
+    //                 let plain_text: String = format!(
+    //                     "🎊 The supply has just reached {} BTC 🎊",
+    //                     util::format_number(*supply_alert as usize)
+    //                 );
+    //
+    //                 self.queue_notification(plain_text)?;
+    //             }
+    //         }
+    //     }
+    //
+    //     Ok(())
+    // }
 
     fn hashrate(&self, mining_info: &GetMiningInfoResult) -> Result<()> {
         let current_hashrate: f64 = mining_info.network_hash_ps / u64::pow(10, 18) as f64; // Hashrate in EH/s

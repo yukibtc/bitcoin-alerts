@@ -4,9 +4,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use bitcoincore_rpc::json::{
-    GetBlockchainInfoResult, GetMiningInfoResult, GetNetworkInfoResult, GetTxOutSetInfoResult,
-};
+use bitcoincore_rpc::json::{GetBlockchainInfoResult, GetMiningInfoResult, GetNetworkInfoResult};
 use bitcoincore_rpc::{Auth, Client, RpcApi};
 use tokio::{task, time};
 
@@ -68,13 +66,13 @@ impl RpcClient {
             .await??)
     }
 
-    #[inline]
-    pub async fn get_tx_out_set_info(&self, timeout: Duration) -> Result<GetTxOutSetInfoResult> {
-        Ok(self
-            .interact(
-                move |client| client.get_tx_out_set_info(None, None, None),
-                timeout,
-            )
-            .await??)
-    }
+    // #[inline]
+    // pub async fn get_tx_out_set_info(&self, timeout: Duration) -> Result<GetTxOutSetInfoResult> {
+    //     Ok(self
+    //         .interact(
+    //             move |client| client.get_tx_out_set_info(None, None, None),
+    //             timeout,
+    //         )
+    //         .await??)
+    // }
 }
